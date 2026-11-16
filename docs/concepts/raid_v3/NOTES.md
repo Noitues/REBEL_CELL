@@ -1,4 +1,4 @@
-# Raid in Deface v3, on the 3D city (set 6), 2026-11-15
+# Raid in Deface v3, on the 3D city (set 7, direction C), 2026-11-15
 
 The raid screen in the Takeover fight's look (Deface v3, A-119), played on the 3D Solace city as the designer ruled
 (2026-11-15, below). The raid rules and words are prototype Variant B v39. Layout as Takeover option A: CREW, rows and core tape
@@ -8,6 +8,30 @@ as the record; it is superseded. Set 4 applies the designer's review of set 3 (t
 columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, one barricade representation. Set 5 put
 it on a native Godot capture of the raid window (no upscale). Set 6 applies the designer's review of set 5: city detail in
 the city layer (windows, shopfronts, blade signs, street lamps with pools) and routes as the red pencil line only.
+**Set 7** applies the designer's pick from `low_text/` (direction C, the happy medium) to all six plates:
+- pictograms and numbers for everything live;
+- one corp document kept as a document: the intercepted work order, folded to a corner at rest, with the next round printed
+  on the corner and Tab to unfold it, even mid-drag;
+- the after-action report stays corp paper;
+- weapon and device icons in the bible's glyph grammar (`icons_key.png`).
+
+Set 6 is kept in `set6/` as the record. Every line of text that remains is at least 16 px cap height.
+
+**Words on screen** (counted from what each plate draws; the corp document is counted separately):
+
+| Plate | Set 7 words | Set 7 corp document words | Set 6 words |
+|---|---|---|---|
+| `r3_plan` | 6 | 1 (folded) | 57 |
+| `r3_place` | 6 | 24 (unfolded) | 62 |
+| `r3_shop` | 6 | 1 | about 60 (estimated) |
+| `r3_playback` | 6 | 1 | about 65 (estimated) |
+| `r3_site` | 9 | 1 | about 70 (estimated) |
+| `r3_aftermath` | 6 | 41 (the report) | about 20 off the paper (estimated) |
+
+The six words on most plates are the callsigns KAI, VEX, MOTH and RUNE, plus SEND IT. On the aftermath plate they are the
+callsigns plus HELD and CONTINUE. The site plate has 9 because KAI and VEX also appear on the who-defends card and KAI on the
+EVACUATE chip. Labels (route letters, keys, site codes) and numbers are counted separately in
+`D:/rc_scratch/raid_v3/insp/c_counts.json`.
 
 ## The city and the raid camera
 - **Pixels: a native Godot capture of the raid window, no upscale.** Captured from **origin/main at `885975b6`** in a
@@ -74,18 +98,26 @@ the city layer (windows, shopfronts, blade signs, street lamps with pools) and r
 |---|---|---|
 | Placement grid | system | thin cyan lines on the ground, faint the whole raid; hidden behind towers at a 22 % ghost. While something is held, legal cells get a dashed outline and a light fill |
 | Operatives on the map | city (holo) | 2D stand-in for the bible 4.8 R3 class beacon, sized to one cell: a pad on the cell, a cone (about 8.5 BU, 110 px tall) opening to a cap ring about two-thirds of the cell wide, a scanlined emblem disc with the class glyph, in the role colour. A faint dashed reach outline on the ground when relevant (playback) |
-| Operatives in CREW | runner: vinyl sticker | option B: the full roster in full colour; placed ones get "on c2" and a tick in pencil |
+| Operatives in CREW | runner: vinyl sticker | option B: the full roster in full colour. Set 7: callsign + class glyph + level pips (no role or level words); the weapon gear tag is its glyph + stars. A placed operative gets a pencil tick (its beacon shows where); an away one is grey, with its site in red pencil ("A1") |
 | Corp units | corp icon (bible 4.8 v4) | SHAPE = type: Trooper / Riot / Sniper = plain Solace capsule (Riot with a shield plate, Sniper with a barrel), Bike = capsule + `>>` badge, Heavy = block, Drone = diamond with four rotors and a 2x2 dot glyph, Wrecker = hexagon with a hammer glyph. FILL = Solace teal = health, draining top-down with a white line. RING = dashed teal circle, 1.85x, with status pips clockwise from top right (S slowed, H held, J jammed). Stack badge "x5". A ground disc under the unit drains the same way |
 | Unit status values | pencil | the duration beside the pip ("2", "1") |
-| INCOMING | corp paper under glass | the intercepted work order: Solace letterhead, WORK ORDER ref, a redaction bar, the v39 rows ("ROUND 1 (now) · 8 units", "A Trooper ×5  B Bike ×3"...) with mini v4 icons, a red INTERCEPTED stamp, a paper clip, glass sheen and cyan corners. The Cell's yellow pencil bracket marks the current round |
+| INCOMING | corp paper under glass | Set 7: the intercepted work order **folded to a corner** at rest: the Solace seal, `ROUND 1 · 8`, and under it the next round as small printed v4 icons with counts; a dog-ear, the edge of the red stamp, an unfold chevron and the Tab key. Unfolded (hold Tab) it is the full document, every line at 16 px cap or more: letterhead, WORK ORDER ref, RAID ORDER, TARGET + redaction, `ROUND n · units` heads with v4 icons ×count, AUTHORISED, INTERCEPTED. Heat is a flame + number beside the corner |
 | Drag (held operative) | runner sticker | Takeover's model: the sticker trails the pointer (spring lag), lifted with a long shadow, tilted, motion streaks; a faint liner stays in its CREW slot; a yellow pencil arrow to the hovered cell, yellow circle = valid |
-| Barricade, Safehouse, site B2, site core | runner: sticker | on the glass over their cell, sized to about one cell (Safehouse 0.66, barricade 0.56, site 0.66, core 0.56). The barricade is the sticker only; its health is a small pencil value beside it ("6 → 3") |
+| Barricade, Safehouse, site B2, site core | runner: sticker | on the glass over their cell, sized to about one cell. Set 7: the Safehouse is a house with the core heart glyph (no words); the barricade is its device tile (yellow, the wall glyph, a hazard band); the site is a socket sticker with its code ("B2"); the core is a hex with the heart, with "8/8" beside it. The barricade's health stays a pencil value ("6 → 3") |
 | Route cells | system | every cell a route travels: a faint red tint on the ground, with no chevrons (set 6). The entry cell (where the stack waits, off the district) is tinted stronger with a solid red edge; the end cell (Safehouse pink, site green) is tinted in its sticker colour with a solid edge |
 | Routes, entries | pencil, red | one grease-pencil line through the cell centres, from the waiting stack cell to cell into the end cell, where it runs under the sticker. No arrowhead and no hatching; the direction is implied. A/B/C circles where it crosses the district edge |
-| Forecast, kill ticks, notes | pencil | "2 leak" arrow, "8 → 6", "+3/+2/+1", hatched reach; no stop bar and no "holds" note (the HUD line says "A holds at b4") |
-| Rows, chips, HUD line, SEND IT, shop sheet, report | unchanged from set 1, side ones at 0.76 | |
+| Forecast, kill ticks, notes | pencil | set 7: a drawn drop + "2" with the arrow into the Safehouse, "8 → 6", "+3/+2/+1", hatched reach, a tick for "safe", stars for the merge |
+| Core, rows | paper tape / glass | the heart, eight cells and "8 → 6" (no title); rounds as diamonds (current lit), credits as the coin + number; UNDO as its glyph + the Z key |
+| Forecast / tick strip | glass, one short line | icons + numbers: route chip + shield (holds) or drop + n (leak), heart + core, skull + kills. Playback: 8 tick cells, skull, drop, wall glyph + held, a ghost unit + still to enter. Shop: weapon glyph, stars + stars → stars, coin 7 → 4 |
+| Shop | paper sticker sheet | weapon tags and device tiles with price dots only (no header); reroll = glyph + price dot + Q; locked in playback = dimmed, with the lock glyph |
+| SEND IT / CONTINUE | verb sticker | kept (the bible's verbs); the key hint is a space-bar keycap glyph; busy = greyed + the spin glyph |
+| Site raid extras | glass card / chip | who defends = a card: the site socket, a shield, the defenders' mini stickers with ticks, an arrow from C2. EVACUATE = an icon chip: the door-out glyph, B2, KAI's mini sticker → the house. v39's text "Evacuate (give up B2 without a fight, KAI back to HQ)" is kept for the terminal tooltip (not drawn) |
+| Aftermath report | corp paper | kept as a document; every line now at 16 px cap or more (shorter subtitle, ref and footer). The Cell's pencil: circle, 30/34, ticks, a pencil heart + tick for "HQ untouched". The result panel is icons + numbers |
+| Weapon / device icons | glyph (bible 3.5) | see `icons_key.png`: reused from the LOCKED set where one exists, new proposals where not |
 
 ## Plates
+(These descriptions are of the set 6 plates, kept in `set6/`. Set 7 shows the same states in C's language; see the Layers table and the word counts above.)
+
 | File | Shows |
 |---|---|
 | `r3_plan.png` | Round 1/4 at rest. KAI c2, VEX e5, MOTH a7 placed (beacons on the city; stickers stay in CREW with pencil cell + tick). Route A comes in from the north-west along street 1 and down avenue b; route B in from the south-east along street 6, then one cell down; both end at the Safehouse on c7. Barricade on b4 on route A, "6 → 3" beside it. Trooper ×5 waits at A, Bike ×3 at B. Pencil: red "2 leak" arrow into the Safehouse, "8 → 6". HUD: `A holds at b4 · B 2 leak · Core 8 → 6 · 6/8 killed`. |
@@ -97,6 +129,31 @@ the city layer (windows, shopfronts, blade signs, street lamps with pools) and r
 | `r3_sheet.jpg` | All six. |
 
 ## Calls I made (not designer rulings)
+- **Unfold while a sticker is held: hold Tab (set 7).** I chose this over the other two options:
+  - *Auto-peek on lift* would cover the right column every time you pick something up, mostly when you don't need it.
+  - *A corner that shows enough* is now partly true: it shows the current round and the next. But rounds 3-4 still need the
+    document.
+  - Tab works at rest and mid-drag (the pointer stays on the map), and the Tab key is printed beside the unfold chevron so it
+    is discoverable. `r3_place` shows it held: the order unfolded over the shop, with its fold creases, and a gold-ringed Tab
+    key at its edge.
+- **The corner shows the next round, not all rounds.** One row of small grey icons + counts keeps the corner at 340 x 132 px;
+  two rows would make it a panel again.
+- **Icons: the LOCKED glyph set first.**
+  - Reused: heart (core), shield (holds), again (reroll), spin-ccw (undo), locked (shop locked), spin (resolving),
+    burn (Heat), block (barricade), bomb (mine).
+  - New proposals, drawn to bible 3.5 (flat white silhouette, few cut-outs, dark rounded outline 0.075 x size, attacks
+    pointed, defences blocky): SMG, rail, shotgun, jammer, sentry, skull (kills), drop (leak), place (arrow into a cell),
+    evacuate (door, arrow out), Tab.
+  - The raid concept rounds (20-23, 40) have turret, sentry and decoy props drawn as world objects, not icons. The bible
+    has no raid weapon or device icons.
+  - Weapons are gear tags (dark, slanted) with the glyph about 34 px on screen in CREW and the shop. Devices are blocky
+    tiles in their device colour, with the glyph about 40 px.
+- **The jammer is not the netrun Jammer glyph** ("ring with a slash", the bible's unit glyphs). That glyph is a corp unit;
+  sharing its silhouette with a player weapon would make a twin across modes. The proposal is a handset with an antenna
+  and waves.
+- **HELD + BOMBARD ×2** (playback) became a pink pill: the H status pip + the mine glyph ×2, with no words.
+- **Grid labels are off** on every plate, so cell names left the HUD and the pencil: "on c2" is a tick, and "from C2" is the
+  C2 site code (a label).
 - **Zoom 3.5x** (designer: roughly 3.5-4x). At 4x a 7 x 7 district (1160 px wide) would not fit between the shrunk columns with
   room for the entry stacks; at 3.5x it is 1010 px wide with the stacks just inside.
 - **Side columns: one uniform scale (0.76)**, not a re-layout. Everything shrinks together towards its corner, so the column
@@ -140,6 +197,24 @@ the city layer (windows, shopfronts, blade signs, street lamps with pools) and r
   auto-placer); the measured checks (contrast, minimum text size) were not run.
 
 ## Honest weak points
+- **The set 7 icons are proposals.** The new glyphs pass the 16 px twin check against the LOCKED set and each other (max
+  soft IoU: leak 0.67 vs slice_trojan, kills 0.61, the rest 0.56 or less; see `icons_key.png`), but they are mine, not the
+  bible's. The guns are long and thin: at 34 px the rail and the shotgun are told apart only by the forked muzzle and the
+  pellet spread.
+- **Some reused LOCKED glyphs are near-twins inside the locked set itself:**
+  - spin = momentum (IoU 1.00), used here for "resolving";
+  - burn ≈ state_burning (0.79), used for Heat;
+  - heart ≈ broken heart (0.76);
+  - block ≈ cleanse (0.74).
+  These pairs are the set's own, not introduced here, but Heat and "resolving" may need their own glyphs.
+- **Pictograms that need onboarding or tooltips:** the round diamonds, the drop for a leak, the "place" arrow, the EVACUATE
+  chip's KAI → house, and the who-defends card.
+- **The EVACUATE tooltip is not drawn.** The v39 sentence is logged above for the terminal tooltip.
+- **The unfolded order covers the shop** on `r3_place`. That is fine mid-drag (the shop can't be used then), but Tab at rest
+  also hides the shop until it is released.
+- **The barricade tile on the map** keeps the old bar sticker's angle and sits under the "6 → 3" pencil. It reads, but less
+  cleanly than the bar did.
+- **Set 6 word counts are estimates except plan and place,** which were listed string by string.
 - **The capture is closer than the 4k plate, and the game renders some things differently at this zoom.** A few tall towers
   near the left edge render see-through (the city's zoom-dependent see-through band and LOD), and the ink outlines are thinner
   than on the 4k plate. Both are the game's own rendering at this camera size.
@@ -187,13 +262,14 @@ These replace the open questions that were here. The plates above predate them a
    without a fight, KAI back to HQ)" and ends the raid at once (site taken, no fight, Heat as an overrun raid). `r3_site.png`
    is wrong on both: its core reads 6 → 5 and its chip text "B2 to the corp, crew walks" is invented.
 
-(Sets 2-6 apply all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
+(Sets 2-7 apply all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
 
 ## Source
-`src/raid_v3_city.py` (set 6 plates + sheet) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
+`src/raid_c.py` (the set 7 plates + sheet in direction C; imports `low_text.py`, `raid_icons.py` and `raid_v3_city.py`), `src/raid_icons.py` (the icons, `icons_key.png` and `icons/`), `src/raid_v3_city.py` (the set 6 plates; the map pieces) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
 `D:/rc_scratch/raid_v3/src/`. They import `raid_kit.py`, `raid_v3.py` (report paper) and the Takeover v3 scripts read-only; the
 first set's `raid_v3.py` is unchanged and still renders `grid_v1`.
-- **Run:** `python raid_v3_city.py [plan place shop playback site aftermath sheet] [--no-tint]`; the city plate first with
+- **Run (set 7):** `python raid_icons.py`, then `python raid_c.py [plan place shop playback site aftermath sheet]`.
+- **Run (set 6, overwrites `r3_*`):** `python raid_v3_city.py [plan place shop playback site aftermath sheet] [--no-tint]`; the city plate first with
   `python hi_grade.py [--no-detail]`.
 - **Reads:** `D:/rc_scratch/raid_v3/city_hi/` (`city_albedo_hi.png`, `ground_vis_hi.png`, `hi_frame.json`; it falls back
   to `tide_concepts/p3_work/city_albedo4k.png` with an upscale if they are missing), `tide_concepts/p2_base/layers/world_pos_f16.npz`,

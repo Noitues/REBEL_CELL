@@ -652,7 +652,7 @@ def memo(img, x0, y0, w, rounds, now=0, site='STATIC ALLEY', ang=-1.0, crease=Fa
         d.line([(S(18), S(y + 52)), (S(w - 18), S(y + 52))], fill=(214, 206, 190, 255), width=S(1))
         y += rowh
     if crease:                                              # unfolded: the fold lines it kept
-        for cy_ in (112, 112 + (ph - 112) // 2):
+        for cy_ in (112, 192 + 2 * 66 - 10):
             d.line([(0, S(cy_)), (S(w), S(cy_))], fill=(206, 198, 180, 255), width=S(2))
             d.line([(0, S(cy_ + 2)), (S(w), S(cy_ + 2))], fill=(248, 244, 232, 255), width=S(1))
     Td(d, (18, ph - 26), 'AUTHORISED', 23, (110, 104, 96), font='m')
