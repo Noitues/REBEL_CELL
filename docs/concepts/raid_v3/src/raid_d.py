@@ -1,21 +1,24 @@
-"""raid_d: set 8, the set 7 raid look (direction C) re-staged on the v40 "dock at the site" rules, plus the sheet.
+"""raid_d: set 8, the set 7 raid look (direction C) re-staged on the dock rules, plus the sheet.
 
     python raid_d.py [plan place shop playback site siteplace sheet]      -> raid_v3/set8/r8_*.png, r8_sheet.jpg
+    (set 8 as first drawn on the v40 sockets: raid_d_v40.py, the same pieces, writes raid_v3/set8/v40/)
 
-v40 (game-v2 page v40-2; port: chain_click scripts/core/raid_dock.gd, levers in content/config/b_raid_config.tres):
+v42 (port-campaign-b 6a99f5c0: scripts/core/raid_dock.gd with slotRule 1, slotShare 0, dockMax / dockMaxHq 0 from
+content/config/b_campaign_config.tres; scripts/ui/raid/b_raid_place_model.gd):
 - the operative is a fixed post (its R3 class beacon) on its site; in the PURGE the whole crew is recalled to HQ: the first on
-  the Safehouse, the rest on the nearest legal cells beside it (dock_rules.beacons_purge);
-- each weapon is its own piece docked on a SOCKET: a road (route) cell where two routes meet or one turns, within dockRadius 3
-  of the beacon (dockRadiusHq 6 in the PURGE), filled up to dockMin 4 with the nearest plain road cells, at most dockMax 8
-  (12), one weapon per socket.  The shot leaves from the socket.
-The sockets on each plate come from dock_rules.py run on the plate's own routes (not hand placed).
+  the Safehouse, the rest on the nearest legal cells beside it (dock_rules.beacons_purge) - unchanged from v40;
+- each weapon is its own piece docked on a STREET SLOT (route slot): every street (route) cell within dockRadius 3 of the post
+  (dockRadiusHq 6 in the PURGE), no cap; ONE PIECE PER SLOT: a weapon, or a street device (barricade, mine, tar, shock fence,
+  gate; slotShare 0) - a slot holding a barricade refuses a weapon and a weapon's slot refuses a device.
+The slots on each plate come from dock_rules.slots_of run on the plate's own routes (not hand placed).
 
-Pieces new in set 8 (all on the set 7 language):
-- socket = system (cyan) corner brackets on the ground at the cell's four grid intersections; lit (brighter, filled) while a
-  weapon card is held and the socket is in the owner's reach;
-- docked weapon = the SAME gear-tag sticker as its CREW card, stuck over a small pad in the owner's role colour;
-- tether = a thin dashed pencil line in the owner's role colour, socket pad -> beacon pad, faded under the route pencil;
-- refusal = a red badge glyph (taken: an occupied socket; too far: an arrow across the reach line), no words.
+Pieces (all on the set 7 language):
+- street slot = system (cyan) inset outline of the street cell on the ground: faint dashed at rest; solid, bright and lightly
+  filled while a weapon card is held and the slot takes it (drawn over the dimmed posts);
+- docked weapon = the SAME gear-tag sticker as its CREW card, stuck over a small pad in the owner's role colour, in the street;
+- tether = a thin dashed pencil line in the owner's role colour, slot pad -> beacon pad, faded under the route pencil;
+- refusal = a red badge glyph, no words (taken: a slot with a dot; device here: the device's own glyph; too far: an arrow across
+  the reach line).
 """
 import json, math, os, sys
 sys.dont_write_bytecode = True
@@ -43,22 +46,46 @@ ORDER = ['KAI', 'VEX', 'MOTH', 'RUNE']
 PATHS = [V.RA + [V.SAFE], V.RB + [V.SAFE]]                    # the PURGE at HQ (set 7's Safehouse raid)
 P_LEGAL = V.legal_cells(V.RA + V.RB, {V.BARR, V.SAFE})
 P_BEACON = DR.beacons_purge(ORDER, V.SAFE, P_LEGAL)          # KAI c7 (on the Safehouse), VEX e5, MOTH a7, RUNE e7
-P_SOCK = DR.sockets_of(P_BEACON['KAI'], PATHS, V.SAFE, purge=True)[0]     # b1 b7 d6 d7 (the same four for every beacon)
+P_SLOT_OF = {o: DR.slots_of(P_BEACON[o], PATHS, V.SAFE, purge=True)[0] for o in ORDER}
+P_SLOT = P_SLOT_OF['KAI']                                     # every route cell off the Safehouse: radius 6 covers the district
+assert all(v == P_SLOT for v in P_SLOT_OF.values())
+P_DEV = {V.BARR: 'BARRICADE'}                                 # the wall on b4 (a street device: it holds its slot)
 SPATHS = [V.SA + [V.SITE], V.SB + [V.SITE], V.SC + [V.SITE]]
 S_BEACON = {'KAI': V.SITE, 'VEX': V.S_VEX}                   # KAI holds the post on B2 (b6); VEX from C2 on a7
-S_SOCK = sorted(set(DR.sockets_of(V.SITE, SPATHS, V.SITE)[0]) | set(DR.sockets_of(V.S_VEX, SPATHS, V.SITE)[0]), key=DR.cid)
+S_SUP = {'KAI': False, 'VEX': True}
+S_SLOT_OF = {o: DR.slots_of(S_BEACON[o], SPATHS, V.SITE, supporter=S_SUP[o])[0] for o in S_BEACON}
+S_SLOT = sorted(set(S_SLOT_OF['KAI']) | set(S_SLOT_OF['VEX']), key=DR.cid)   # the shared pool (first come)
+S_DEV = {}
 
-# the docks per plate: oid -> socket cell (None = card not docked)
+# the docks per plate: oid -> slot cell (None = card not docked)
 P_REST = {'KAI': (3, 6), 'MOTH': (1, 6), 'VEX': None, 'RUNE': None}          # KAI SMG on d7, MOTH JAMMER on b7
 P_PLAY = {'KAI': (3, 6), 'MOTH': (1, 6), 'VEX': (1, 0), 'RUNE': (3, 5)}      # + VEX RAIL on b1, RUNE SHOTGUN on d6
 S_REST = {'KAI': (1, 4), 'VEX': (1, 6)}                                      # KAI SMG on b5, VEX RAIL on b7
 HOVER_P = (3, 5)                                                              # RUNE's SHOTGUN held over d6
-HOVER_S = (4, 5)                                                              # VEX's RAIL held over e6: too far from a7
-for oid, c in list(P_PLAY.items()) + list(S_REST.items()):
-    pass
-assert all(c in P_SOCK for c in P_PLAY.values()), (P_SOCK, P_PLAY)
-assert all(c in S_SOCK for c in S_REST.values()), (S_SOCK, S_REST)
-assert DR.why(HOVER_S, V.S_VEX, SPATHS, V.SITE, set(), purge=False) == 'too_far'
+HOVER_S = (4, 5)                                                              # VEX's RAIL held over e6: KAI's slot, too far for VEX
+
+
+def wpn_at(docks, but=None):
+    return {c: o for o, c in docks.items() if c is not None and o != but}
+
+
+def why_p(oid, cell, docks):
+    """v42 refusal of oid's held weapon over cell in the PURGE (its own slot counts as free: the card was lifted)"""
+    return DR.why42(cell, P_BEACON[oid], PATHS, V.SAFE, wpn_at(docks, oid), P_DEV, purge=True)
+
+
+def why_s(oid, cell, docks):
+    return DR.why42(cell, S_BEACON[oid], SPATHS, V.SITE, wpn_at(docks, oid), S_DEV, supporter=S_SUP[oid])
+
+
+for _d in (P_REST, P_PLAY):                                   # every dock drawn is legal by the rules
+    for _o, _c in _d.items():
+        assert _c is None or why_p(_o, _c, _d) is None, (_o, _c, why_p(_o, _c, _d))
+for _o, _c in S_REST.items():
+    assert why_s(_o, _c, S_REST) is None, (_o, _c)
+assert why_p('RUNE', HOVER_P, P_REST) is None
+assert why_p('RUNE', V.BARR, P_REST) == 'slot_piece'
+assert why_s('VEX', HOVER_S, S_REST) == 'too_far' and HOVER_S in S_SLOT_OF['KAI']
 
 
 def wname(oid):
@@ -66,29 +93,34 @@ def wname(oid):
 
 
 # ------------------------------------------------------------------ socket, pad, tether, refusal
-def _corner_brackets(c, r, e=0.09, t=0.24):
-    """the four L brackets at a cell's grid intersections (cell units, on the ground)"""
-    out = []
-    for (u, v, su, sv) in ((0, 0, 1, 1), (1, 0, -1, 1), (1, 1, -1, -1), (0, 1, 1, -1)):
-        a = (c + u + su * e, r + v + sv * e)
-        out.append([G.sp(a[0] + su * t, a[1]), G.sp(*a), G.sp(a[0], a[1] + sv * t)])
-    return out
+SLOT_IN = 0.13                                                # the slot outline's inset in the cell (clear of the grid line)
+SLOT_REST = (96, 214, 246)
 
 
-def sockets(img, cells, lit=(), taken_lit=(), on_glass=False):
-    """system: socket corner brackets on the ground; `lit` = free and in the held card's reach (bright, filled)"""
+def _slot_quad(cell, inset=SLOT_IN):
+    q = G.quad(cell[0], cell[1], inset)
+    return q + [q[0]]
+
+
+def slots(img, cells, lit=(), on_glass=False, rest_a=0.74):
+    """system: the street slots on the ground, as an inset outline of the street cell (a tile set in the street, not the grid).
+    rest = thin dashed, faint; `lit` = the held weapon may dock there now: solid bright outline over an ink edge, light fill,
+    a glow (drawn over the dimmed posts with on_glass)"""
+    R = Layer()
     L = Layer(); d = L.d
     for cell in cells:
-        on = cell in lit
-        hot = on or cell in taken_lit
-        if on:
-            q = G.quad(cell[0], cell[1], 0.08)
-            d.polygon([(S(x), S(y)) for x, y in q], fill=CYAN + (46,))
-        for br in _corner_brackets(*cell):
-            P = [(S(x), S(y)) for x, y in br]
-            d.line(P, fill=INK + (200,), width=S(6.5 if hot else 5.0), joint='curve')
-            d.line(P, fill=(CYAN if hot else (120, 220, 240)) + (255 if hot else 200,), width=S(3.4 if hot else 2.4), joint='curve')
-    if on_glass:                                              # while a card is held the lit sockets are an affordance: over the posts
+        q = _slot_quad(cell)
+        if cell in lit:
+            P = [(S(x), S(y)) for x, y in q]
+            d.polygon(P[:-1], fill=CYAN + (40,))
+            d.line(P, fill=INK + (190,), width=S(6.0), joint='curve')
+            d.line(P, fill=CYAN + (255,), width=S(3.0), joint='curve')
+        elif not on_glass:
+            IR.dash_poly(R.d, q, SLOT_REST, 2.0, on=8, off=6)
+    if not on_glass:
+        R.im.putalpha(R.im.split()[3].point(lambda v: int(v * rest_a)))
+        V.masked_ground(img, R, ghost=0.6)
+    if on_glass:                                              # while a card is held the lit slots are an affordance: over the posts
         comp(img, _wrap(L.im.filter(ImageFilter.GaussianBlur(S(4)))))
         comp(img, L)
         return
@@ -173,18 +205,19 @@ def tether(img, oid, cell, bcell, bow=0.16, seed=0, lift_b=0.0):
 
 
 def refuse_badge(img, kind, x, y, r=17):
-    """a refusal as a glyph: red disc, white mark.  taken = an occupied socket (brackets + a dot); far = an arrow across the
-    dashed reach line"""
+    """a refusal as a glyph: red disc, white mark.  taken = an occupied slot (the slot's tile + a dot); 'dev:<GLYPH>' = the slot
+    holds that street device (its own glyph: "<device> here"); far = an arrow across the dashed reach line"""
     L = Layer(); d = L.d
     d.ellipse([S(x - r - 2.5), S(y - r - 2.5), S(x + r + 2.5), S(y + r + 2.5)], fill=INK + (255,))
     d.ellipse([S(x - r), S(y - r), S(x + r), S(y + r)], fill=REF + (255,), outline=(255, 240, 240, 255), width=S(1.6))
     wc = (255, 255, 255, 255)
-    if kind == 'taken':
-        h_, t_ = r * 0.56, r * 0.30
-        for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-            cx, cy = x + sx * h_, y + sy * h_
-            d.line([(S(cx - sx * t_), S(cy)), (S(cx), S(cy)), (S(cx), S(cy - sy * t_))], fill=wc, width=S(2.6), joint='curve')
-        d.ellipse([S(x - r * 0.24), S(y - r * 0.24), S(x + r * 0.24), S(y + r * 0.24)], fill=wc)
+    if kind == 'taken':                                       # the slot tile (a diamond, as the cell reads on the ground) + a dot
+        h_ = r * 0.66
+        P = [(S(x), S(y - h_)), (S(x + h_), S(y)), (S(x), S(y + h_)), (S(x - h_), S(y)), (S(x), S(y - h_))]
+        d.line(P, fill=wc, width=S(2.4), joint='curve')
+        d.ellipse([S(x - r * 0.22), S(y - r * 0.22), S(x + r * 0.22), S(y + r * 0.22)], fill=wc)
+    elif kind.startswith('dev:'):
+        C.gpaste(L.im, kind[4:], x, y, r * 1.25, (255, 255, 255))
     else:
         lx = x - r * 0.05
         for k in range(3):
@@ -227,12 +260,11 @@ def crew8(img, docks, held=None, away=None, kills=None, stars=None, merge=False)
             else:
                 is_d = (not gone) and docks.get(oid) is not None
                 stick(Lm, C.wpn_c(o['wpn'], st, curl=None if (is_d or gone) else 0.22, grey=gone), wx, wy, wa, scale=0.82)
-                if is_d:                                      # tick + a pencil socket mark, under the card's right end
+                if is_d:                                      # tick + a pencil slot tile (the street cell), under the card's right end
                     tx, ty = wx + 44, wy + 52
                     py.tick(tx - 14, ty, 13, 6)
-                    for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
-                        cx_, cy_ = tx + 26 + sx * 10, ty - 2 + sy * 8
-                        py.stroke([(cx_ - sx * 7, cy_), (cx_, cy_), (cx_, cy_ - sy * 6)], 4.2, taper=False)
+                    cx_, cy_ = tx + 26, ty - 2
+                    py.stroke(py.wobble([(cx_, cy_ - 9), (cx_ + 14, cy_), (cx_, cy_ + 9), (cx_ - 14, cy_), (cx_, cy_ - 9)], 0.4), 4.2, taper=False)
             if gone:
                 pr.text(away[oid], x - 4, y + 106, 34, angle=-6); say(away[oid])
             if kills and oid in kills:
@@ -317,24 +349,21 @@ def strip8(img, items, box=(560, 956, 1360, 1008)):
 
 
 # ------------------------------------------------------------------ the PURGE map (set 7's Safehouse raid on v40)
-def purge_map(img, F, docks, held=None, hover=None, pencil='rest', seed=0, sticks=True):
-    """grid, route tint, sockets, beacons, tethers, barricade, route pencil, notes, docked weapons, Safehouse + KAI's post"""
+def purge_map(img, F, docks, held=None, hover=None, pencil='rest', seed=0, sticks=True, show_slots=True):
+    """grid, route tint, street slots, beacons, tethers, barricade, route pencil, notes, docked weapons, Safehouse + KAI's post"""
     V.draw_grid(img, F, labels=False)
     V.routes_ground(img)
-    taken = {c for c in docks.values() if c is not None}
-    if held:
-        lit = [c for c in P_SOCK if c not in taken]
-        sockets(img, P_SOCK, lit=lit, taken_lit=[c for c in P_SOCK if c in taken])
-    else:
-        sockets(img, P_SOCK)
+    why = {c: why_p(held, c, docks) for c in P_SLOT} if held else {}
+    lit = [c for c in P_SLOT if held and why[c] is None]
+    if show_slots:
+        slots(img, P_SLOT, lit=lit)
     for oid, c in docks.items():                              # stands first (on the ground), under the beacons' cones
         if c is not None:
             pad(img, oid, c)
     for oid in sorted([o for o in ORDER if o != 'KAI'], key=lambda o: G.cc(*P_BEACON[o])[1]):
         beacon(img, oid, *P_BEACON[oid], alpha=DIM if held else 1.0)
     if held:
-        lit = [c for c in P_SOCK if c not in taken]
-        sockets(img, lit, lit=lit, on_glass=True)
+        slots(img, lit, lit=lit, on_glass=True)
     for k, (oid, c) in enumerate(docks.items()):
         if c is not None:
             tether(img, oid, c, P_BEACON[oid], bow=0.16 if oid != 'VEX' else -0.10, seed=k,
@@ -359,10 +388,6 @@ def purge_map(img, F, docks, held=None, hover=None, pencil='rest', seed=0, stick
         V.pen_hatch_quad(py, [G.sp(c0, r0), G.sp(c1, r0), G.sp(c1, r1), G.sp(c0, r1)], step=26)
         hx, hy = G.cc(*hover)
         py.text('+3', hx + 104, hy - 40, 40, angle=-6); say('+3')
-        for c in P_SOCK:                                      # the other free socket's gain, small
-            if c not in taken and c != hover:
-                x, y = G.cc(*c)
-                py.text('+1', x + 58, y + 6, 30, angle=-6); say('+1')
         LT.pen_drop(pr, lx - 26, ly - 2, 17); pr.text('2', lx + 12, ly, 38, angle=-6); say('2')
         py.tick(sx - 128, sy + 14, 18, 7)
         py.text('0', lx + 4, ly + 42, 40, angle=-6); say('0')
@@ -380,18 +405,27 @@ def purge_map(img, F, docks, held=None, hover=None, pencil='rest', seed=0, stick
             if c is not None:
                 docked(img, oid, c)
     if held:
-        for c in P_SOCK:
-            if c in taken:
-                x, y = G.cc(*c)
-                refuse_badge(img, 'taken', x + 44, y + 4)
-    if hover:                                                 # the hovered legal socket: its brackets in yellow pencil (valid)
-        hover_brackets(img, hover)
+        badges(img, why, P_DEV)
+    if hover:                                                 # the hovered legal slot: its outline in yellow pencil (valid)
+        hover_slot(img, hover)
 
 
-def hover_brackets(img, cell, col=PEN_Y, seed=45):
+BADGE_AT = {}                                                 # per-cell badge offsets where the default spot is covered
+
+
+def badges(img, why, devs):
+    """the refusal badges of a held weapon: beside every slot it may not take (taken by a weapon / holding a street device)"""
+    for c, w in sorted(why.items(), key=lambda kv: DR.cid(kv[0])):
+        if w not in ('socket_taken', 'slot_piece'):
+            continue
+        x, y = G.cc(*c)
+        ox, oy = BADGE_AT.get(c, (44, 4))
+        refuse_badge(img, 'taken' if w == 'socket_taken' else 'dev:' + devs[c], x + ox, y + oy)
+
+
+def hover_slot(img, cell, col=PEN_Y, seed=45):
     ph = Wax(col, seed)
-    for br in _corner_brackets(*cell, e=0.02, t=0.3):
-        ph.stroke(ph.wobble(br, 0.6), 7, taper=False)
+    ph.stroke(ph.wobble(_slot_quad(cell, 0.06), 0.6), 7, taper=False)
     ph.ink_ss(img)
 
 
@@ -454,9 +488,8 @@ def plate_shop():
 def plate_playback():
     F = F_all(); img = C.blank()
     V.draw_grid(img, F, labels=False)
-    V.routes_ground(img)
-    sockets(img, P_SOCK)
-    for oid in ('VEX', 'RUNE'):                               # reach outlines from the sockets the shots leave
+    V.routes_ground(img)                                      # no slot marks in playback: the map is locked, slots are a plan mark
+    for oid in ('VEX', 'RUNE'):                               # reach outlines from the slots the shots leave
         V.reach_outline(img, V.cheb(*P_PLAY[oid], K.OPS[oid]['reach']), K.OPS[oid]['col'][0], alpha=130)
     for oid, c in P_PLAY.items():
         pad(img, oid, c)
@@ -523,20 +556,17 @@ def site_map(img, F, docks, held=None, hover=None):
     for cells, lt in ((V.SA, 'A'), (V.SB, 'B'), (V.SC, 'C')):
         V.route_ground(img, cells, V.S_ENT[lt], V.SITE)
     V.end_cell(img, V.SITE, col=(150, 236, 130))
-    taken = {c for o, c in docks.items() if c is not None and o != held}
+    why = {c: why_s(held, c, docks) for c in S_SLOT} if held else {}
+    lit = [c for c in S_SLOT if held and why[c] is None]
     if held:                                                  # the dock radius round the owner's beacon, faint, in its colour
         dock_radius(img, held, S_BEACON[held])
-        reach = DR.sockets_of(S_BEACON[held], SPATHS, V.SITE)[0]
-        sockets(img, S_SOCK, lit=[c for c in reach if c not in taken], taken_lit=[c for c in S_SOCK if c in taken])
-    else:
-        sockets(img, S_SOCK)
+    slots(img, S_SLOT, lit=lit)                               # the shared pool; a slot of KAI's only stays at rest
     for oid, c in docks.items():
         if c is not None and oid != held:
             pad(img, oid, c)
     beacon(img, 'VEX', *S_BEACON['VEX'], alpha=DIM if held else 1.0)
     if held:
-        lit = [c for c in reach if c not in taken]
-        sockets(img, lit, lit=lit, on_glass=True)
+        slots(img, lit, lit=lit, on_glass=True)
     for k, (oid, c) in enumerate(docks.items()):
         if c is not None and oid != held:
             tether(img, oid, c, S_BEACON[oid], bow=0.22, seed=20 + k, lift_b=0.0 if oid == 'KAI' else 0.0)
@@ -571,10 +601,7 @@ def site_map(img, F, docks, held=None, hover=None):
     for lt, kind, n in (('A', 'trooper', 3), ('B', 'riot', 2), ('C', 'drone', 2)):
         V.unit(img, kind, *G.cc(*V.S_ENT[lt]), 1.0, count=n); say(str(n))
     if held:
-        for c in S_SOCK:
-            if c in taken:
-                x, y = G.cc(*c)
-                refuse_badge(img, 'taken', x + 44, y + 4)
+        badges(img, why, S_DEV)
 
 
 SITE_STRIP = [('chip', 'A'), ('ico', 'drop', S_GAIN), ('txt', '0', S_GAIN), ('sep',), ('chip', 'B'), ('ico', 'drop', S_HARM), ('txt', '1', S_HARM), ('sep',),
@@ -613,12 +640,12 @@ def plate_siteplace():
 
 # ------------------------------------------------------------------ main + sheet
 PLATES = dict(plan=plate_plan, place=plate_place, shop=plate_shop, playback=plate_playback, site=plate_site, siteplace=plate_siteplace)
-CAPS = dict(plan='PURGE at rest: 4 posts at HQ, 4 sockets; SMG on d7, jammer on b7; B leaks 2',
-            place="RUNE's shotgun card held: free sockets lit, taken ones refused; range from d6, +3",
+CAPS = dict(plan='PURGE at rest: 4 posts at HQ; 13 street slots; SMG d7, jammer b7; B leaks 2',
+            place="RUNE's shotgun held: 10 free slots lit; d7, b7 taken, b4 holds the barricade; d6 +3",
             shop='between rounds: SHOTGUN merged onto the docked one (stays on d6), credits 7 -> 4',
-            playback='tick 3/8: shots leave the sockets (rail b1, shotgun d6, SMG d7)',
-            site='B2 site raid: KAI posted on B2, VEX from C2 on a7; SMG b5, rail b7',
-            siteplace="VEX's rail lifted from b7: dock radius 3 drawn, e6 refused (too far)")
+            playback='tick 3/8: shots leave the slots (rail b1, shotgun d6, SMG d7); no slot marks',
+            site='B2 site raid: KAI on B2, VEX from C2 on a7; 7 shared slots; SMG b5, rail b7',
+            siteplace="VEX's rail lifted: radius 3; b4 c6 d6 b7 lit, b5 taken; e6 (KAI's) too far")
 
 
 def sheet(counts):
@@ -629,7 +656,7 @@ def sheet(counts):
     sh = Image.new('RGB', (cols * tw_ + (cols + 1) * pad_, 2 * (th_ + cap) + 3 * pad_ + 50), (14, 14, 18))
     d = ImageDraw.Draw(sh)
     f = ImageFont.truetype(MONO, 15); fa = ImageFont.truetype(ANTON, 22); fb = ImageFont.truetype(ANTON, 30)
-    d.text((pad_, 10), 'RAID set 8 (DRAFT): set 7 direction C on the v40 dock rules: posts on the site, weapons docked on street sockets', font=fb, fill=TEXT_HI)
+    d.text((pad_, 10), 'RAID set 8 (DRAFT, v42): set 7 direction C on the v42 route slots: posts on the site, weapons docked on street slots', font=fb, fill=TEXT_HI)
     for k, n in enumerate(names):
         im = Image.open(OUT + 'r8_%s.png' % n).resize((tw_, th_), Image.LANCZOS)
         x = pad_ + (k % cols) * (tw_ + pad_); y = 54 + pad_ + (k // cols) * (th_ + cap + pad_)
@@ -646,8 +673,8 @@ if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     CJ = 'D:/rc_scratch/raid_v3/insp/d_counts.json'
     counts = json.load(open(CJ, encoding='utf-8')) if os.path.exists(CJ) else {}
-    print('purge beacons', {k: G.name(*v) for k, v in P_BEACON.items()}, 'sockets', [G.name(*c) for c in P_SOCK], flush=True)
-    print('site sockets', [G.name(*c) for c in S_SOCK], flush=True)
+    print('purge beacons', {k: G.name(*v) for k, v in P_BEACON.items()}, 'slots', [G.name(*c) for c in P_SLOT], flush=True)
+    print('site slots', {o: [G.name(*c) for c in v] for o, v in S_SLOT_OF.items()}, flush=True)
     todo = [a for a in sys.argv[1:] if not a.startswith('--')] or list(PLATES) + ['sheet']
     for n in todo:
         if n == 'sheet':

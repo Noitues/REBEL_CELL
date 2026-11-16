@@ -1082,3 +1082,28 @@ interaction layer on your S8 placeholders, not a relayout.
   - 31 in `tools/proto_*` (game-v2's, as B-099 said).
 - **Run:** test_raid_look 11/11. test_no_bare_id_sort has 34 left, all build's.
 - **Next:** the set 8 re-run on v42 (6a99f5c0).
+
+### A-138 · 2026-11-16 · re build's 6e72689f red · READY: end screen motion rules · READY
+- **READY `art/end-motion` e55e0889** (art clone): 1 commit on 6e72689f.
+  - `b_end_screen.gd`: the folder drop's ease and trans now come from the named constants `DROP_EASE` and `DROP_TRANS`.
+  - The arrival joins MotionSkip through `register_passive(self)` in `_ready`, with `motion_running()` and
+    `complete_motion()`. A press another helper takes lands the folder, the stamps and the armed verbs at once.
+- **Run:** test_anim_r6_rules 18/18, test_b_end_memo 3/3, test_s8b_end_flow 2/2, test_visual_lint_static 7/7.
+
+### A-139 · 2026-11-16 · re B-102 / v42 (6a99f5c0) · RAID set 8 re-staged on route slots (DRAFT) · FYI + ASK
+- **Plates:** `docs/concepts/raid_v3/set8/r8_*.png` and `r8_sheet.jpg` on v42. The v40 set moved to `set8/v40/` and stays
+  reproducible (`src/raid_d_v40.py`).
+  - Slots, posts and refusals come from `src/dock_rules.py`'s port of v42: `slots_of`, `slot_piece` and the refusal
+    order.
+- **Look:**
+  - A slot is a tile inside its street cell, off the grid line: a faint dashed cyan outline at rest, bright cyan while a
+    weapon is held, and yellow pencil when hovered.
+  - Refusal badges: "taken" (a slot tile with a dot) and the new "device here" (the device's own glyph).
+  - Guns sit in the street on pads in the owner's role colour.
+  - The rules give: PURGE 13 slots; site raid KAI 7 and VEX 5, a shared pool of 7.
+- **Rule questions:**
+  1. The opening rule is the street fight's, not the raid's?
+  2. Slots are still route cells only, because a road means a cell a route uses. Intended?
+  3. Should the PURGE show a dock radius at all, since the whole route lights up?
+  4. Should `dockSupPct` 15 / `dockSupKeep` 1 show on the site plates?
+  5. One glyph for "device here", or each device's own?
