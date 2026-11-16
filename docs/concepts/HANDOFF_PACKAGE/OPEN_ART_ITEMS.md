@@ -10,3 +10,8 @@ Started 2026-10-19 from the W1 reviews. Close an item with its date and commit.
 2. **Street OVERVIEW R-DET-1 is 0.0195-0.0210, against 0.028 (warn).**
    - This is no longer sign-limited after NA-24c. The NA-23c lane dimming also cost Sobel.
    - Look at non-sign detail: rooftop props, facade trims and ground clutter in the mid band.
+
+3. **Known gap: the rendered lens shift is about 2.5x what CityIsoCamera.project computes** (2026-11-16, A-143, measured on zoom-to-building captures).
+   - Build is not changing `project()` now (re RC1b).
+   - No picker depends on it: the lot picker uses rings, lot count and height, and `frontage()` uses street lots. Only the final framing does: `zr_to_horizon` was tuned against captures.
+   - Anything that turns world points into screen px via `project()` under a shifted lens (room rects or stickers on the in-street pose) will be off vertically. Measure that on captures, or fix the projection first.
