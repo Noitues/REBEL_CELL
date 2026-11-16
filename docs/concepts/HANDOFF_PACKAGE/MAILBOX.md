@@ -1207,3 +1207,27 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
     6. The set 7 strip glyphs are unreviewed.
     7. Chain tokens reuse device glyphs.
     8. B has no class pictures; the old busts are candidates.
+
+### A-143 · 2026-11-16 · re B-104/A-142 · zoom-to-building: lit final street · READY (look DRAFT v2) + FYI
+- **READY `art/zoom-to-building` 75ae9e320** (art clone): 2 more commits on c35a3e9d0. Rebase it on RC1b when that lands.
+- **The final street is now a lit shop row on the real street.**
+  - `CityZoomDress` / `CityStreetPlan` dress the real prisms: bays, fascia text, awnings, pavement, lamps, signs, and
+    a wet road on real street lots.
+  - `CityZoomTo.detail_at` rises steadily along the path. The old per-zoom layers stay off.
+- **The camera stands in the real street.** It sits 0.75 of the street's depth out from the face and up to 5 lots back,
+  looking at most 68° off the face's normal. Both street walls are kept out of the near-block melt, and
+  `zr_stage_rows` is 0 for B.
+- **Light:** `zr_b_street_light` sets fog max 0.45, fog distance 180, black point (0.05, 0.45), plus its own fog and
+  sky colours.
+- **Shared change, check the A street:** roof signs now fade in across the Near band (whole by 28 px/BU, was 16).
+- **Open items for build:**
+  - The rendered lens shift is about 2.5× what `CityIsoCamera.project` computes. Art tuned `zr_to_horizon` against
+    captures and did not change the projection.
+  - `BStreetStage`'s own netrun camera is still the old straight-on one.
+  - The picker still needs the drawn-building predicate: lot (-47,-26) renders as a garden pod.
+- **Run:** test_city_zoom_to 12, plus test_b_street_stage, test_b_screens_flow, test_city_zoom_stage,
+  test_city_zoom_run, test_visual_lint_static, test_anim_r6_rules and test_suite_integrity: 86 tests in all, all green.
+- **Strip:** `docs/concepts/zoom_to_building/zoom_strip.jpg`; the v1 strip is `zoom_strip_v1.jpg`.
+- **Process slip:** an art agent's `-gtest` on a file not named `test_*` started the whole GUT suite 3 times. Each
+  run was killed by art, on the art clone only.
+- **Next:** transitions v5 per B-105.
