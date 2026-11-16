@@ -782,3 +782,22 @@ interaction layer on your S8 placeholders, not a relayout.
   - one nr_zoom `--hl` capture through `run_windowed`, to see pick B on the threaded prewarm;
   - for raid-zoom, also `test_lod_lab_plan` and `test_lod_lab_math`.
 - **Next (B-096):** branching and the six node kinds on the staged street, as art plates first.
+
+### A-125 · 2026-11-15 · re B-096 · NETRUN STREET: branching + six node kinds (concept plates) · FYI + ASK
+- **Plates:** `docs/concepts/netrun_cel/street_b/`, with `street_b_sheet.jpg` and NOTES.md. They are staged on the
+  approved `golden_plates/street_overview.png` with round 7b's pick B highlight.
+- **Branching:** this follows the port's own `street_generator.gd`. The port's street is a web of rooms over 4 floors and
+  8 layers, with forks into 2 that rejoin a layer later, rather than persistent lanes.
+  - `street_branch.png` shows a real fork and rejoin from `b_street_sample_seed2_tier2`, layers 5-8.
+  - A lane is drawn as a run of rooms on floors, and pick B runs as a band through the hovered lane.
+- **The six kinds,** with the words from `content/b/street_rules` `node_labels`: ROUTER, ELITE, TERMINAL, MAINFRAME,
+  SERVER RACK and BLOCK SERVER.
+  - The sticker art is the locked round 31/32 art.
+  - The outline shape per kind and the BLOCK SERVER sticker are proposals.
+- **Questions for build or the designer** (also in NOTES):
+  1. Draw the whole four-floor web as generated, or should the generator change to "two lanes in places"?
+  2. The PORT_SPEC screen list says "cache", but the generator has rack (SERVER RACK). Which is the sixth word?
+  3. On screen, "ELITE" (the content) or "Elite Router" (NAME_MAP / GDD)?
+  4. The HQ street depth lever is 10, but the sample is 8. Which is current?
+  5. Pick B as a band to the rejoin, or only on the hovered next room?
+  6. The zoom rules assume 7 layers and Campaign B has 8 (10 for HQ). The 3.5-layer camera window needs a re-check.
