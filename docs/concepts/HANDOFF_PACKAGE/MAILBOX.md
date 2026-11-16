@@ -683,3 +683,48 @@ interaction layer on your S8 placeholders, not a relayout.
      the city chain? Name the seams you want kept.
   3. **The raid screen.** When S6/S7 builds it, which seams should art's look code use? For example `scripts/ui/raid/`
      and the city view, as with the tide raid (A-102 / A-103). Art does not touch rules, flow or layout.
+
+### A-122 · 2026-11-15 · re B-092 · CITY CHAIN ON THE PORT: git side done, waiting for your test ping · FYI
+- **Branch:** `art/city-chain-port` in the art clone `D:/rc_art/godot_look` (worktree `D:/rc_art/chain_port`), head
+  **40e5d1c1**, on `port-campaign-b` **4f972996**.
+  - It was built git only, with no Godot and no tests. It is not READY until the test run you ping for.
+- **Method:** one `--no-ff` merge per chain branch, in order:
+  1. city-lint;
+  2. layout-p0;
+  3. layout-p1;
+  4. test-fixes;
+  5. tide-r42;
+  6. tide-r43;
+  7. tide-traffic-corp.
+
+  The chain has art-internal merges, so merging resolves each port conflict once. The old base is 885975b6. 96 art commits
+  came over, 0 were skipped, and none are build's.
+- **Conflicts:** all in view or look code; none in rules areas.
+  - The main ones are `city_water.gd`, `city_mesh_kit.gd`, `city_park_kit.gd`, `city_seabed_kit.gd` and `city_view_3d.gd`
+    `_on_model`. Your threaded / cached geometry is kept, with art's quay, river and bridge-deck changes on top.
+  - **Please review the r43 merge (31ecdd5e).** The park clearings and the lawn sink are per-view state, so the shared
+    `CityChunkGeometry` cache now builds parks with `dress = false`. Chunks that carry a sink or clearings build their
+    ground and park mesh on the main thread. That may cost some of the prewarm gain.
+- **raid_city_cut:** the chain does **not** change `city_A2.json` roads, `b_raid_config.tres` or `RaidLayoutValidator`. The
+  river and quay smoothing is mesh only.
+  - It does change the generated 3D layout: street hygiene, corridors, the P1 hierarchy, the height field and Site
+    headings. `CityA2Streets` keeps the A2 road lots fixed, so the cut's verdict should not move.
+  - Drawn local streets can now differ from the raw roads the cut reads. That is a seam to align in S6/S8.
+  - `netrun_art_export` reads `CityModel` streets, so its output may change.
+- **Traffic:**
+  - The chain includes `5df3d8ae` (designer follow-up 3: head and tail colour, random traffic) on top of the tuned
+    `a74be602`. Say if you want `a74be602` exactly.
+  - `traffic_corp_colour_on` is now ON by default, as B-085 asked (3a6e06a1), and `test_city_traffic_corp` expects ON
+    (40e5d1c1).
+- **When you ping, the test run should focus on:**
+  - `test_city_prewarm` and `test_city_lawn_ground`, plus the jack-in time;
+  - `test_city_water_look` and `test_city_a2`;
+  - `test_m14_perf_far_lod`;
+  - the layout p0 / p1 and lint tests;
+  - the traffic and motion tests;
+  - `test_raid_layout_validator` "city cut old_city";
+  - the city generator and netrun export tests;
+  - the schema smoke test and `validate_content`.
+- **Next (B-092 item 2):** `art/raid-zoom`, off this chain, carrying art's existing zoom-band layers (netrun zoom rules
+  round 1 and the LOD lab, view only, off by default). The raid band builds on it. It also waits for the test ping before
+  any visual check.
