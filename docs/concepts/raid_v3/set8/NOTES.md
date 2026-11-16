@@ -34,12 +34,13 @@ What v42 gives on the plate district:
 | File | Shows |
 |---|---|
 | `r8_plan.png` | PURGE at rest (Heat 100). Posts by the rule: KAI on the Safehouse (c7), VEX e5, MOTH a7, RUNE e7. The 13 street slots are faint dashed tiles inset in the street cells. KAI's SMG docked on d7, MOTH's jammer on b7; VEX's rail and RUNE's shotgun not docked (cards curl). Forecast as set 7: A holds at the wall, B leaks 2. |
-| `r8_place.png` | RUNE's shotgun card held. The 10 slots it may take are lit (solid cyan tile, light fill, glow, over the dimmed posts): the whole street lights up. Refused, with a red badge beside: d7 and b7 (a weapon there: the *taken* badge, a slot tile with a dot) and b4 (the barricade there: the badge carries the barricade's own glyph). Hovered d6: its tile redrawn in yellow pencil, the shotgun's reach hatched from d6, `+3`; forecast B 2 → 0, 8/8. Work order unfolded (Tab held). |
+| `r8_place.png` | RUNE's shotgun card held. The 10 slots it may take are lit (solid cyan tile, light fill, glow, over the dimmed posts): the whole street lights up. Refused, with a red badge beside: d7 and b7 (a weapon there: the *taken* badge, a slot tile with a dot) and b4 (the barricade there: B-104, the badge is the barricade's own small sticker (yellow vinyl, hazard band, block glyph) with a red no-mark on its corner). Hovered d6: its tile redrawn in yellow pencil, the shotgun's reach hatched from d6, `+3`; forecast B 2 → 0, 8/8. Work order unfolded (Tab held). |
 | `r8_shop.png` | Between rounds: all four docked (VEX's rail on b1, RUNE's shotgun on d6); the SHOTGUN bought merges onto RUNE's docked one, which stays on d6. Credits 7 → 4. Slots at rest. |
 | `r8_playback.png` | Tick 3/8. Shots leave the slots (rail b1, shotgun d6, SMG d7); reach outlines from the slots. **No slot marks in playback** (the map is locked; slots are a plan mark). |
-| `r8_site.png` | Site raid on B2 (Heat 25), round 1/3. KAI's post on B2, VEX supporting from C2 on a7. The 7 shared slots at rest; KAI's SMG on b5 (lane B), VEX's rail on b7 (lane C). |
-| `r8_siteplace.png` | VEX's rail lifted off b7: VEX's dock radius (3) dashed in VEX's blue; its free slots b4, c6, d6, b7 lit; b5 (KAI's SMG) refused (*taken*: first come); b3 and e6 stay at rest (KAI's slots, beyond VEX). Pointer on e6: refused, red struck circle + the **too-far** badge; no forecast change. |
+| `r8_site.png` | Site raid on B2 (Heat 25), round 1/3. KAI's post on B2, VEX supporting from C2 on a7. The 7 shared slots at rest; KAI's SMG on b5 (lane B), VEX's rail on b7 (lane C). B-104: under VEX's docked rail, the supporter-share chip (VEX-blue ink pill: a pie with the 15 % slice filled, `15%`, a link = the gun stays VEX's); no word. |
+| `r8_siteplace.png` | VEX's rail lifted off b7: VEX's dock radius (3) dashed in VEX's blue; its free slots b4, c6, d6, b7 lit; b5 (KAI's SMG) refused (*taken*: first come); b3 and e6 stay at rest (KAI's slots, beyond VEX). Pointer on e6: refused, red struck circle + the **too-far** badge; no forecast change. The share chip travels with the held card (bottom right). The radius is drawn because it limits something (b3, e6). |
 | `r8_sheet.jpg` | All six. |
+| `r8_devhere_key.png` | Check strip, not a plate: the five street devices' "device here" badges (BARRICADE, MINE, TAR, SHOCK fence, GATE) at plate size (top row) and x2, on the place plate's ground. |
 
 Aftermath: unchanged (`../r3_aftermath.png` stands). Words on screen: the same as set 7 (6; 9 on the site plates); every
 slot state and refusal is a glyph. Counts in `D:/rc_scratch/raid_v3/insp/d_counts.json`.
@@ -62,15 +63,27 @@ slot state and refusal is a glyph. Counts in `D:/rc_scratch/raid_v3/insp/d_count
 - **Only the slots the held weapon may take now are lit**; refused ones keep the rest tile and get a badge beside; slots of
   another post outside the holder's radius stay at rest (siteplace b3, e6), which shows the radius without text.
 - Kept from v40: guns drawn *in* the street on a role-colour pad (build B-102), tethers, posts dim to 42 % while a card is held,
-  dock radius drawn on site plates only (the PURGE radius covers the district), shared pool first come (B-102).
+  shared pool first come (B-102).
+- **Dock radius rule (B-104 #3, computed, `radius_limits`):** a held weapon's radius is drawn only when some route cell is
+  not among its post's slots. PURGE: every route cell is a slot for every post (radius 6), so **no ring on plan / place /
+  shop** (the run prints `purge radius drawn: False`). Site: KAI's and VEX's radius 3 both leave route cells out, so the
+  siteplace ring stays.
+- **Supporter share (B-104 #4):** a chip, no word: pie + `15%` + link (dockSupPct 15: VEX's docked gun deals 15 %;
+  dockSupKeep 1: it stays with VEX). On the docked gun's tag, and on the held card. Both levers PROVISIONAL; the player word
+  is pending with the designer.
+- **Device here (B-104 #5):** the badge is now the device's own small sticker (its vinyl colours, white glyph, die-cut
+  edge) with a small red no-mark on the corner, not a red disc. TAR, SHOCK and GATE have no raid_icons glyph yet; their
+  marks (puddle + drip, two posts + bolt, boom barrier) are drawn at badge size in `raid_d.py` only.
 
 ## Honest weak points
 - **The PURGE place plate lights almost the whole route.** With every street cell a slot, "where can I put it" is answered
   by "anywhere on the street but three cells"; the lit run is strong and sits under the reach hatch and route pencil. Fine as
   an affordance, but the choice now lives in the forecast, and only the hovered slot shows a gain.
 - **Rest slots are faint**; over the red route tint the dashes go whitish. Brighter competes with the route pencil.
-- **Device-here badge** uses the barricade glyph at 20 px; at sheet scale it is a red dot. Other devices (mine, tar, fence,
-  gate) need their glyphs checked at that size.
+- **Device-here stickers** (`r8_devhere_key.png`): barricade, mine and gate read at 1:1; TAR (purple puddle) and SHOCK
+  (posts + bolt) are weak at 1:1 and need real glyphs. Only the barricade appears on a plate.
+- **Share chip:** the 15 % slice is small at 1:1 (the pie reads as a dot); the chip sits close to the site's 8/8 and the
+  yellow C2 arrow crosses it on `r8_site.png`.
 - The *device side* of the exclusion (a held barricade/mine refused on a weapon's slot, "weapon here") is ported and tested in
   `dock_rules.py` but **not staged** on a plate.
 - Kept from v40: the PURGE cluster at the Safehouse (four posts within two cells), tethers mostly hidden by the tags, the
@@ -93,7 +106,8 @@ slot state and refusal is a glyph. Counts in `D:/rc_scratch/raid_v3/insp/d_count
 `src/raid_d.py` (the v42 plates + sheet; imports `raid_c.py` for set 7's pieces), `src/dock_rules.py` (v40 and v42 dock rules
 on the plate grid; `python dock_rules.py` prints posts, sockets, slots and sample refusals), `src/raid_d_v40.py` (set 8 as
 first drawn, writes `set8/v40/`). Run from `D:/rc_scratch/raid_v3/src/` (needs `city_hi/`):
-`python raid_d.py [plan place shop playback site siteplace sheet]` → `set8/r8_*.png`, `set8/r8_sheet.jpg`. `crop8.py` crops a
+`python raid_d.py [plan place shop playback site siteplace devkey sheet]` → `set8/r8_*.png`, `set8/r8_sheet.jpg` (`devkey`
+writes `r8_devhere_key.png` from the place plate). `crop8.py` crops a
 plate for inspection.
 
 ## Build's answers (B-102, 2026-11-16), as received on the v40 draft
@@ -101,3 +115,19 @@ plate for inspection.
   piece per slot, barricades use the same slots). **Done here, on 6a99f5c0.**
 - A shared socket pool, first come first served, is fine. **Kept (siteplace: b5 refused, KAI's).**
 - Docked guns are drawn in the street, as now. **Kept.**
+
+## Build's answers (B-104, 2026-11-16), on the v42 set (build's numbering: 1 = the opening rule; 2-5 = questions 2-5 above)
+1. **Opening rule:** fights only (Takeover street / boss fights); raids are untouched. **Nothing to draw (as assumed).**
+2. **Route cells only:** yes, as the page builds it (bit-exact): the designer's words were "a weapon on the route paths
+   with operatives in adjacent buildings", so the route path is the slot space. **Kept.**
+3. **PURGE radius:** draw it only where it limits something; no ring when every route cell is in reach (art's call on the
+   exact rule). **Done:** `radius_limits` (some route cell not among the post's slots); no ring on the PURGE plates, the
+   site ring kept.
+4. **Supporter share:** show it on the site plates (a supporter's gun deals 15 % and stays with its owner); the player word
+   is pending with the designer ("covering at 15 %" for now); both levers PROVISIONAL. **Done:** pie + `15%` + link chip,
+   no word, on `r8_site.png` and `r8_siteplace.png`.
+5. **Device here:** each device's own small sticker (the player should see what blocks the slot); art's call on size.
+   **Done:** device sticker + red no-mark, 2.5 x 2.1 badge radius (about 42 x 36 px at 1080p); all five in
+   `r8_devhere_key.png`.
+Still open from the list above: question 1 (the word "street slot", tooltips only?) and question 6 (rest slots outside a
+held card).

@@ -22,7 +22,8 @@ sys.dont_write_bytecode = True
 
 DOCK = dict(radius=3, radius_hq=6, min=4, max=8, max_hq=12, per_socket=1)          # v40 (b_raid_config.tres as ported then)
 DOCK42 = dict(radius=3, radius_hq=6, min=4, max=0, max_hq=0, per_socket=1,          # v42 (b_campaign_config.tres @ 6a99f5c0)
-              slot_rule=1, slot_share=0, sup_side=0, sup_reach=2)
+              slot_rule=1, slot_share=0, sup_side=0, sup_reach=2,
+              sup_pct=15, sup_keep=1)                       # dockSupPct / dockSupKeep (RaidDock.sup_pct_on / sup_kept), PROVISIONAL
 # street (road) devices (RaidContent.device_on_road; the lever text: barricade, mine, tar, shock fence, gate) and the
 # blocking one (device_has r_dev_wall), for slot_piece
 ROAD_DEVS = {'BARRICADE', 'MINE', 'TAR', 'SHOCK', 'GATE'}

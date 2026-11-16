@@ -134,10 +134,16 @@ def _wrap(im):
     L = Layer(); L.im = im; L.d = ImageDraw.Draw(im); return L
 
 
-def dock_radius(img, oid, bcell):
+def radius_limits(slots, paths, hq):
+    """B-104 #3: a post's dock radius is drawn only where it limits something: some route (street) cell is not among its
+    slots.  In the PURGE (radius 6) every route cell is a slot for every post, so no ring is drawn there."""
+    return set(slots) != set(DR.road(paths, hq))
+
+
+def dock_radius(img, oid, bcell, radius=None):
     """the dock radius while a card is held: the Chebyshev square round the beacon, a dashed line in the owner's colour on
     the ground over an ink edge, clipped to the district"""
-    cells = set(V.cheb(*bcell, DR.DOCK['radius']))
+    cells = set(V.cheb(*bcell, DR.DOCK42['radius'] if radius is None else radius))
     top = K.OPS[oid]['col'][0]
     L = Layer(); d = L.d
     for (c, r) in cells:
@@ -216,8 +222,9 @@ def refuse_badge(img, kind, x, y, r=17):
         P = [(S(x), S(y - h_)), (S(x + h_), S(y)), (S(x), S(y + h_)), (S(x - h_), S(y)), (S(x), S(y - h_))]
         d.line(P, fill=wc, width=S(2.4), joint='curve')
         d.ellipse([S(x - r * 0.22), S(y - r * 0.22), S(x + r * 0.22), S(y + r * 0.22)], fill=wc)
-    elif kind.startswith('dev:'):
-        C.gpaste(L.im, kind[4:], x, y, r * 1.25, (255, 255, 255))
+    elif kind.startswith('dev:'):                             # B-104 #5: the device's own small sticker, not a red disc
+        dev_badge(img, kind[4:], x, y, r)
+        return
     else:
         lx = x - r * 0.05
         for k in range(3):
@@ -226,6 +233,89 @@ def refuse_badge(img, kind, x, y, r=17):
         d.line([(S(x - r * 0.62), S(y + r * 0.1)), (S(x + r * 0.5), S(y + r * 0.1))], fill=wc, width=S(2.6))
         d.polygon([(S(x + r * 0.68), S(y + r * 0.1)), (S(x + r * 0.34), S(y - r * 0.18)), (S(x + r * 0.34), S(y + r * 0.38))], fill=wc)
     comp(img, L)
+
+
+DEV_COL = dict(K.DEV, SHOCK=((150, 255, 236), (40, 190, 200)), GATE=((255, 120, 150), (200, 40, 80)))
+DEV_GLYPH = {'BARRICADE', 'MINE', 'SENTRY'}                   # in raid_icons; TAR, SHOCK (fence), GATE are drawn here (badge size only)
+
+
+def _dev_mark(d, kind, x, y, s, col):
+    """TAR / SHOCK (fence) / GATE at badge size (s = half the glyph box), white with an ink edge, in screen px"""
+    def ln(pts, w):
+        P = [(S(a), S(b)) for a, b in pts]
+        d.line(P, fill=INK + (255,), width=S(w + 2.2), joint='curve')
+        d.line(P, fill=col, width=S(w), joint='curve')
+    if kind == 'TAR':                                         # a puddle with a drip
+        for (cx, cy, rx, ry), f in (((x, y + s * 0.35, s * 0.95, s * 0.42), INK + (255,)), ((x, y + s * 0.35, s * 0.8, s * 0.3), col)):
+            d.ellipse([S(cx - rx), S(cy - ry), S(cx + rx), S(cy + ry)], fill=f)
+        d.ellipse([S(x - s * 0.3), S(y - s * 0.75), S(x + s * 0.3), S(y - s * 0.05)], fill=col, outline=INK + (255,), width=S(1.2))
+    elif kind == 'SHOCK':                                     # two posts, a bolt between them
+        ln([(x - s * 0.8, y - s * 0.8), (x - s * 0.8, y + s * 0.8)], 2.4)
+        ln([(x + s * 0.8, y - s * 0.8), (x + s * 0.8, y + s * 0.8)], 2.4)
+        ln([(x - s * 0.55, y - s * 0.35), (x + s * 0.1, y - s * 0.05), (x - s * 0.1, y + s * 0.15), (x + s * 0.55, y + s * 0.45)], 2.0)
+    elif kind == 'GATE':                                      # a boom barrier: post + striped arm
+        ln([(x - s * 0.75, y - s * 0.2), (x - s * 0.75, y + s * 0.85)], 2.6)
+        ln([(x - s * 0.75, y - s * 0.2), (x + s * 0.9, y - s * 0.2)], 3.0)
+        for k in range(3):
+            xx = x - s * 0.35 + k * s * 0.45
+            d.line([(S(xx), S(y - s * 0.32)), (S(xx + s * 0.14), S(y - s * 0.08))], fill=REF + (255,), width=S(2.0))
+
+
+def dev_badge(img, kind, x, y, r=17):
+    """B-104 #5 "device here": the slot's own device as a small sticker (its vinyl colours, white glyph, die-cut edge), with a
+    small red no-mark on its corner: the player sees WHAT blocks the slot, not just that something does"""
+    top, bot = DEV_COL[kind]
+    w, h = r * 2.5, r * 2.1
+    L = Layer(); d = L.d
+    x0, y0, x1, y1 = x - w / 2, y - h / 2, x + w / 2, y + h / 2
+    d.rounded_rectangle([S(x0 - 4), S(y0 - 4), S(x1 + 4), S(y1 + 4)], radius=S(8), fill=INK + (255,))
+    d.rounded_rectangle([S(x0 - 2.2), S(y0 - 2.2), S(x1 + 2.2), S(y1 + 2.2)], radius=S(7), fill=(250, 250, 252, 255))
+    d.rounded_rectangle([S(x0), S(y0), S(x1), S(y1)], radius=S(6), fill=bot + (255,))
+    d.rounded_rectangle([S(x0), S(y0), S(x1), S(y0 + h * 0.5)], radius=S(6), fill=top + (255,))
+    d.rectangle([S(x0), S(y0 + h * 0.3), S(x1), S(y0 + h * 0.5)], fill=top + (255,))
+    if kind == 'BARRICADE':                                   # the hazard band, the barricade's identity
+        for k in range(6):
+            xx = x0 + 3 + k * w / 5.5
+            d.polygon([(S(xx), S(y1 - 5)), (S(xx + 4), S(y1 - 5)), (S(xx + 1), S(y1)), (S(xx - 3), S(y1))], fill=INK + (255,))
+    comp(img, L)
+    G2 = Layer()
+    if kind in DEV_GLYPH:
+        C.gpaste(G2.im, kind, x, y - (2 if kind == 'BARRICADE' else 0), r * 1.35, (255, 255, 255))
+    else:
+        _dev_mark(G2.d, kind, x, y, r * 0.62, (255, 255, 255, 255))
+    comp(img, G2)
+    N = Layer(); d = N.d                                      # the no-mark, top right corner
+    nx, ny, nr = x1 + 1, y0 - 1, r * 0.5
+    d.ellipse([S(nx - nr - 2), S(ny - nr - 2), S(nx + nr + 2), S(ny + nr + 2)], fill=INK + (255,))
+    d.ellipse([S(nx - nr), S(ny - nr), S(nx + nr), S(ny + nr)], fill=REF + (255,), outline=(255, 240, 240, 255), width=S(1.4))
+    d.line([(S(nx - nr * 0.55), S(ny + nr * 0.55)), (S(nx + nr * 0.55), S(ny - nr * 0.55))], fill=(255, 255, 255, 255), width=S(2.4))
+    comp(img, N)
+
+
+SUP_AT = (-64, 46)                                            # the chip under the supporter's docked tag
+SUP_HELD = (0, 70)                                            # ... and under the held card
+SUP_PCT = DR.DOCK42.get('sup_pct', 15)                        # dockSupPct 15, dockSupKeep 1 (b_campaign_config @ 6a99f5c0)
+
+
+def sup_chip(img, oid, x, y, s=1.0):
+    """B-104 #4 supporter share, no word (the word is pending): an ink pill in the supporter's colour with a pie (the 15 %
+    slice filled), the number, and a link (its guns stay with it, dockSupKeep 1)"""
+    top, bot = K.OPS[oid]['col']
+    F = F_all()
+    L = Layer(); d = L.d
+    w, h = 132 * s, 34 * s
+    x0, y0 = x - w / 2, y - h / 2
+    d.rounded_rectangle([S(x0 - 2.5), S(y0 - 2.5), S(x0 + w + 2.5), S(y0 + h + 2.5)], radius=S(h / 2 + 2), fill=(250, 250, 252, 255))
+    d.rounded_rectangle([S(x0), S(y0), S(x0 + w), S(y0 + h)], radius=S(h / 2), fill=INK + (245,), outline=top + (255,), width=S(2))
+    pc, pr_ = (x0 + h * 0.55, y), h * 0.33                    # the pie: full disc outline, the share filled
+    d.ellipse([S(pc[0] - pr_), S(pc[1] - pr_), S(pc[0] + pr_), S(pc[1] + pr_)], fill=(70, 70, 86, 255), outline=(255, 255, 255, 255), width=S(1.6))
+    d.pieslice([S(pc[0] - pr_), S(pc[1] - pr_), S(pc[0] + pr_), S(pc[1] + pr_)], -90, -90 + 360 * SUP_PCT / 100, fill=top + (255,))
+    text(d, (pc[0] + pr_ + 27 * s, y - 1), '%d%%' % SUP_PCT, F['a40'] if s > 1.2 else F.get('a30', F['a40']), TEXT_HI + (255,), stroke=0)
+    lx, ly, lr = x0 + w - h * 0.55, y, h * 0.18               # the link: two interlocked rings
+    for ox in (-lr * 0.75, lr * 0.75):
+        d.ellipse([S(lx + ox - lr), S(ly - lr * 0.75), S(lx + ox + lr), S(ly + lr * 0.75)], outline=(255, 255, 255, 255), width=S(1.8))
+    comp(img, L)
+    say('%d%%' % SUP_PCT)
 
 
 # ------------------------------------------------------------------ beacon (set 7's, with a lifted base for a post on a sticker)
@@ -357,6 +447,8 @@ def purge_map(img, F, docks, held=None, hover=None, pencil='rest', seed=0, stick
     lit = [c for c in P_SLOT if held and why[c] is None]
     if show_slots:
         slots(img, P_SLOT, lit=lit)
+    if held and radius_limits(P_SLOT_OF[held], PATHS, V.SAFE):   # B-104 #3: only where it limits something (never, here)
+        dock_radius(img, held, P_BEACON[held], DR.DOCK42['radius_hq'])
     for oid, c in docks.items():                              # stands first (on the ground), under the beacons' cones
         if c is not None:
             pad(img, oid, c)
@@ -558,8 +650,8 @@ def site_map(img, F, docks, held=None, hover=None):
     V.end_cell(img, V.SITE, col=(150, 236, 130))
     why = {c: why_s(held, c, docks) for c in S_SLOT} if held else {}
     lit = [c for c in S_SLOT if held and why[c] is None]
-    if held:                                                  # the dock radius round the owner's beacon, faint, in its colour
-        dock_radius(img, held, S_BEACON[held])
+    if held and radius_limits(S_SLOT_OF[held], SPATHS, V.SITE):   # the dock radius round the owner's beacon, in its colour,
+        dock_radius(img, held, S_BEACON[held])                  # only where it limits something (B-104 #3)
     slots(img, S_SLOT, lit=lit)                               # the shared pool; a slot of KAI's only stays at rest
     for oid, c in docks.items():
         if c is not None and oid != held:
@@ -588,6 +680,9 @@ def site_map(img, F, docks, held=None, hover=None):
     for oid, c in sorted(docks.items(), key=lambda kv: G.cc(*kv[1])[1]):
         if c is not None and oid != held:
             docked(img, oid, c)
+            if S_SUP.get(oid):                            # B-104 #4: the supporter's share on its docked gun
+                tx, ty = tag_at(c)
+                sup_chip(img, oid, tx + SUP_AT[0], ty + SUP_AT[1])
     beacon(img, 'KAI', *S_BEACON['KAI'], lift0=3.0, alpha=DIM if held else 1.0)
     stick(img, K.place_sticker('B2', None, (150, 236, 130), (62, 170, 70), shape='socket', w=96, h=84), sx, sy - 10, -3, scale=V.STICK['site']); say('B2')
     vx, vy = G.cc(*S_BEACON['VEX'], lift=8.5)
@@ -629,13 +724,34 @@ def plate_siteplace():
     pr.stroke(pr.wobble([(hx - 34, hy + 22), (hx + 34, hy - 22)], 0.6), 6, taper=False)
     pr.ink_ss(img)
     refuse_badge(img, 'far', hx - 4, hy - 62, 19)
-    held_card(img, 'VEX', hx, hy, ok=False)
+    hold = held_card(img, 'VEX', hx, hy, ok=False)
+    sup_chip(img, 'VEX', hold[0] + SUP_HELD[0], hold[1] + SUP_HELD[1])   # the share travels with the held gun (B-104 #4)
     C.who_defends(img, F)
     C.evac_chip(img)
     left8(img, 8, 1, rnd=1, rmax=3, docks=S_REST, held='VEX', away={'MOTH': 'A1', 'RUNE': 'D4'})
     C.right_c(img, F, V.SROUNDS)
     strip8(img, [('ico', 'place', GOLD), ('refuse', 'far'), ('sep',)] + SITE_STRIP)
     return img
+
+
+def devkey():
+    """check strip (not a plate): the five street devices' 'device here' badges at plate size (1:1) and x2, on the place
+    plate's ground round b4"""
+    base = Image.open(OUT + 'r8_place.png').convert('RGBA')
+    bx, by = G.cc(*V.BARR)
+    crop = base.crop((int(bx - 330), int(by - 70), int(bx + 330), int(by + 70)))
+    img = C.blank()
+    for k, kind in enumerate(['BARRICADE', 'MINE', 'TAR', 'SHOCK', 'GATE']):
+        dev_badge(img, kind, bx - 260 + k * 130, by, 17)
+    over = img.resize(base.size, Image.LANCZOS).crop((int(bx - 330), int(by - 70), int(bx + 330), int(by + 70)))
+    one = crop.copy(); one.alpha_composite(over)
+    big = one.resize((one.width * 2, one.height * 2), Image.LANCZOS).convert('RGB')   # x2, in two halves under the 1:1 row
+    out = Image.new('RGB', (one.width, one.height * 5), (14, 14, 18))
+    out.paste(one.convert('RGB'), (0, 0))
+    out.paste(big.crop((0, 0, one.width, big.height)), (0, one.height))
+    out.paste(big.crop((one.width, 0, big.width, big.height)), (0, one.height * 3))
+    out.save(OUT + 'r8_devhere_key.png')
+    print('ok', OUT + 'r8_devhere_key.png', flush=True)
 
 
 # ------------------------------------------------------------------ main + sheet
@@ -674,11 +790,15 @@ if __name__ == '__main__':
     CJ = 'D:/rc_scratch/raid_v3/insp/d_counts.json'
     counts = json.load(open(CJ, encoding='utf-8')) if os.path.exists(CJ) else {}
     print('purge beacons', {k: G.name(*v) for k, v in P_BEACON.items()}, 'slots', [G.name(*c) for c in P_SLOT], flush=True)
+    print('purge radius drawn:', any(radius_limits(P_SLOT_OF[o], PATHS, V.SAFE) for o in ORDER),
+          '| site radius drawn:', {o: radius_limits(S_SLOT_OF[o], SPATHS, V.SITE) for o in S_BEACON}, flush=True)
     print('site slots', {o: [G.name(*c) for c in v] for o, v in S_SLOT_OF.items()}, flush=True)
     todo = [a for a in sys.argv[1:] if not a.startswith('--')] or list(PLATES) + ['sheet']
     for n in todo:
         if n == 'sheet':
             sheet(counts); continue
+        if n == 'devkey':
+            devkey(); continue
         LT.SHOWN.clear(); LT.DOC.clear(); LT.SMALL.clear()
         ov = PLATES[n]()
         V.finish(ov).save(OUT + 'r8_%s.png' % n)

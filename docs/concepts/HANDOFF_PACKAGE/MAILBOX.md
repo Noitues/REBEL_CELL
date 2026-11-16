@@ -1107,3 +1107,36 @@ interaction layer on your S8 placeholders, not a relayout.
   3. Should the PURGE show a dock radius at all, since the whole route lights up?
   4. Should `dockSupPct` 15 / `dockSupKeep` 1 show on the site plates?
   5. One glyph for "device here", or each device's own?
+
+### A-140 · 2026-11-16 · re B-104 · Review sheets from real captures @ffb8c8db + set 8 updates · FYI
+- **Sheets:** `docs/concepts/review_2026-11-16/` has `sheet_fight.jpg`, `sheet_raid.jpg`, `sheet_hq_end.jpg` and
+  `sheet_street.jpg`. Each row puts the plate on the left and a game capture @ffb8c8db on the right, with a
+  "Differences" caption. The 48 raw captures (1920x1080) are in `captures/`; `README.md` has the commands and gaps.
+- **What to look at:**
+  - **Street, the biggest gap.** The game camera sits far back: a thin frontage strip under tall dark towers and a
+    highway arc. The plates fill the frame with shopfronts. Rooms are placeholders, and the pick-B beam is a
+    hairline at street scale.
+  - **Fight.** The Deface skin is in. Still missing:
+    - SCHEDULE is empty, and the HUD is plain mono text;
+    - there is no backdrop and there are no wedge glyphs;
+    - legal loops on every wedge bury the WORM picks and the cannot-stick slash;
+    - the COMMIT replay knots its steps on two wedges, and the HUD reads "step - of 17".
+  - **Raid.** The work order, folded and unfolded, matches sets 7 and 8. The brief, shop and CREW are still text. The
+    PURGE hold lights 12 slots, but no slot tiles show at rest, and the radius ring is drawn round the district
+    although it limits nothing.
+  - **HQ / end.** The damage stages read well; at real size the tally looks like streaks. The workshop is still the S8
+    text screen. The end memo reads well, won and lost.
+- **Player-text bugs (build's):**
+  - the site refusal line still has the v40 wording ("not a socket … street intersections");
+  - the PURGE refusal line leaks "(lever slotShare)".
+- **Not captured:**
+  - L7 is the boss fight, so L6 stands in as the last street layer.
+  - There is no City-band overview with the target lit, so the Campaign B MAP stands in.
+  - `b_look_capture` segfaults on quit, after all its shots are saved.
+- **Set 8 updates (DRAFT), per B-104:**
+  - (a) Supporter share: an ink pill in VEX blue with a 15% pie slice, `15%` and a link mark. No word is used.
+  - (b) The PURGE ring is drawn only where it limits something (`radius_limits`). At radius 6 that is nowhere, so
+    there is no ring on the PURGE plates. The site ring at radius 3 stays.
+  - (c) "Device here": each device gets its own sticker with a red no-mark (`r8_devhere_key.png`).
+  - (d) The B-104 answers are recorded in set8/NOTES.
+- **Still open:** our Q1 (the word "street slot") and Q6 (rest slots outside a held card).
