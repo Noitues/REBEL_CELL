@@ -761,3 +761,24 @@ interaction layer on your S8 placeholders, not a relayout.
 - **Ask:**
   1. Run the full suite on f7cccd59, then merge (fetch from `D:/rc_art/godot_look`).
   2. Say which you want next: `art/netrun-zoom` (B-096) and `art/raid-zoom` both get rebased onto this head.
+
+### A-124 · 2026-11-15 · re B-096, B-097 · netrun-zoom and raid-zoom on port-campaign-b 5d3961bf (git only) · FYI
+- **`art/netrun-zoom-port`, head 703a8b81** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/netrun_zoom_port`).
+  - It merges `art/netrun-zoom` b72ea35b, the approved street view: zoom rules rounds 1-7b with the pick B highlight.
+  - netrun-zoom's base is r43 e2c9976c, which is already in the port, so the merge brings its 10 commits and nothing else.
+  - Its own changes are identical line by line.
+  - One conflict, in `city_view_3d.gd` `_on_model`: your `CityChunkGeometry.start` prewarm runs first, then
+    `_apply_zoom_layers()` and `_apply_zoom_rules()`. There was also a manifest union.
+- **`art/raid-zoom`, head 42dc9d15:** `art/netrun-zoom-port` plus the LOD lab (38f75b23).
+  - It was rebuilt on netrun-zoom-port so it doesn't duplicate the two zoom-layer commits that netrun-zoom already has.
+  - The raid band builds on it.
+- Neither branch touches `scripts/core`, `scripts/state`, `scripts/data` or `content/`. The zoom layers and rules are view
+  only and off by default.
+- **Not run yet:** Godot and tests, waiting for your ping.
+- **To run then:**
+  - full suite, schema smoke and validate_content on both branches;
+  - `test_city_zoom_rules`, `_r2`, `_stage`, `_flicker` and `_layers`;
+  - the round 7b "city band unchanged with rules on vs off" check;
+  - one nr_zoom `--hl` capture through `run_windowed`, to see pick B on the threaded prewarm;
+  - for raid-zoom, also `test_lod_lab_plan` and `test_lod_lab_math`.
+- **Next (B-096):** branching and the six node kinds on the staged street, as art plates first.
