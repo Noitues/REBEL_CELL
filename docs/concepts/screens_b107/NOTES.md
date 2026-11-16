@@ -304,3 +304,13 @@ All three share the same frame:
 - Scratch in `D:/rc_scratch/b107`.
 - Nothing written under D:/Godot/rebel_cell.
 - No commits.
+
+## Answers from the vertical slice (v47 rules, 2026-11-16)
+- **Heat after a lost raid:** Heat changes. Any fallen stop grades the raid "overrun", and an overrun gets the normal
+  Heat vent. The amount is still being tuned. To fix: the lost result shows "Heat drops" with no value.
+- **EVACUATE:** exists in v47, at stop 1 only. The player gives up the target in round 0, and every wave moves on to
+  the next stop. It is not available at later stops. To fix: add an EVACUATE action to setup at stop 1.
+- **Support, then defend:** allowed. An operative may support next door and later defend their own site in the same
+  raid. Only supporting twice in one raid is barred: the supporter of a fallen stop does not support again.
+- **Rest slots only while holding, and docked reach on hover:** look calls with no rules objection. The designer
+  decides with his pick.
