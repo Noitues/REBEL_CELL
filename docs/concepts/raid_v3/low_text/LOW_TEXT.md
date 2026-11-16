@@ -110,3 +110,11 @@ does not meet the low-text goal or the size aim.
 - **SEND IT stays a worded verb sticker (2 words) in all three.** It is the bible's verb.
 - **Not tested:** the wave strip's unit icons (12 px radius) are only checked by eye, and no readability test was run with
   players.
+
+## Designer pick, 2026-11-15
+**C, happy medium, leads.** Live and numeric information is shown as pictograms and numbers, and the work order stays the
+one corp document with text: folded to a corner by default, unfolded on hover. Not yet applied to the six r3 plates. Open
+follow-ups:
+- the next round as icons on the folded corner;
+- an unfold that works while a sticker is held;
+- bible-grade weapon and device icons in place of the placeholders.

@@ -4502,6 +4502,9 @@ Presentation only, with no rule change. Concept set: `docs/concepts/raid_v3/` (N
    parked it above its slot). To fold into the bible when the raid look locks.
 5. **CREW keeps the full roster, option B** (`docs/concepts/raid_v3/crew_options/crew_B.png`): a placed operative's sticker
    stays in full colour with its cell and a tick in pencil under it; on the city the operative is its R3 class beacon.
+6. **Low-text UI: direction C, happy medium** (`docs/concepts/raid_v3/low_text/`). Pictograms and numbers for everything live;
+   the work order is the one corp document with text, folded to a corner and unfolded on hover. Remaining text is at least
+   16 px cap height. Item 3 still holds: the work order is the corp document that keeps INCOMING.
 
 ## Open questions for the designer
 
