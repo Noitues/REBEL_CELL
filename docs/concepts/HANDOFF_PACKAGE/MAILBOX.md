@@ -871,3 +871,32 @@ interaction layer on your S8 placeholders, not a relayout.
   4. Docked guns sit on lane cells the corp drives through (dockHit 0). Draw them in the street, as now, or at the kerb?
   5. In the PURGE every socket is within dockRadiusHq 6, so the "too far" refusal shows only in the site raid.
 - **Next:** queue item 4 (Deface v3 look code on cde4fe6c) is in progress.
+
+### A-130 · 2026-11-16 · re build's queue item 4 · READY: Deface v3 look on the fight seams · READY + FYI
+- **READY `art/deface-v3-look` 89a83c55** (art clone `D:/rc_art/godot_look`, worktree `D:/rc_art/deface_look`): 7
+  commits on cde4fe6c. View only.
+  - `b_fight_view.gd` is rewritten in the look and keeps its public API and node names (Wheel, StickerLayer,
+    PencilLayer, …). It adds FxLayer.
+  - New: `DefaceLook` (view look resource, `content/config/deface_look.tres`), `DefaceMarks`, `DefaceReplay`,
+    `DefaceDraw`, and `test_deface_look` (fast tier, in the manifest). `strings.csv` is re-exported.
+  - No `scripts/data` schema change.
+  - Everything drawn comes from `preview_targets` (pick order), `target_why` (via BWords), `seg.st` and
+    TakeoverForecast. Nothing is recomputed.
+- **Run:** test_deface_look 8/8, plus test_b_screens_flow and test_takeover_view_api (19 in all, 0 failing), plus
+  pass24_screens and b1b_wax_pencil (64 in all, 0 failing, 2 deferred pending). Schema smoke and validate pass. The full
+  suite is yours.
+- **Please measure:** flow plus view_api took about 390 s here, against manifest timings of about 70 s. That was while
+  your suite ran, and art has no cde4fe6c baseline. The flow test drives 387 inputs without frames, so freed views pile
+  up (about 165k orphans). If the time is real, update the manifest, or say so and art will slim the view.
+- **Captures** (windowed, scratch capture scene, not committed): `docs/concepts/takeover_board/v3/port_check/0*.png`.
+- **Known gaps against TAKEOVER_PORT_SPEC (art follow-ups):**
+  - The forecast step circles are small and stack inside one wedge. Steps must reach 16 px cap and use a ladder out of
+    the wedge.
+  - No spring-follow, tilt or slap on the held program: it sits lifted top right.
+  - No hover forecast on a program (the session has no card-play preview API).
+  - No status hover tooltip.
+  - The label placer is a fixed layout.
+  - RETAKEN does not dissolve to bits yet.
+  - Corp statuses and ARMED stay teal mono text, and only the SCHEDULE rows are enamel tickets.
+  - The pencil hand is the kit's RC Wax: the repo's fonts README makes Permanent Marker the auditor's hand.
+  - Placeholders: program silhouettes per card kind, status stickers, our-wall plank, the RETAKEN and WHEEL TAKEN stamps.
