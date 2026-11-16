@@ -103,19 +103,34 @@ class CityGrid:
 
 
 # the raid camera: the same orthographic camera as city_default, VIEW_ZOOM x closer.  The pixels come from the 4k render of the same
-# frame (p3_work/city_albedo4k.png, 3840x2160, aligned to city_default at 0,0 px), so a 2x zoom is a native-pixel crop, no upscale.
-VIEW_ZOOM = 2.0
-VIEW_O = (960.0, 540.0)                   # the window's top-left on city_default.png (1080 coords); window = 960 x 540
-                                          # (as far down-right as the 4k plate allows: the street district sits at its corner)
+# frame (p3_work/city_albedo4k.png, 3840x2160, aligned to city_default at 0,0 px): 2x is native, past that it is upscaled (Lanczos
+# + a light unsharp) from a float-box crop, so the world -> screen map stays exact: screen = (p1080 - VIEW_O) * VIEW_ZOOM.
+VIEW_ZOOM = 3.5
+VIEW_O = (0.0, 0.0)                       # set below from the district: the window's top-left on city_default.png (1080 coords)
 CITY4K = 'D:/rc_scratch/tide_concepts/p3_work/city_albedo4k.png'
+UI_S = 0.76                               # the side columns (CREW, rows, core tape / work order, shop, SEND IT) drawn at this scale
+MAP_C = (960.0, 470.0)                    # where the district centre sits on screen (between the scaled columns, above the HUD line)
 
 
 def view(x, y):
     return (x - VIEW_O[0]) * VIEW_ZOOM, (y - VIEW_O[1]) * VIEW_ZOOM
 
 
-# the street district: avenue f (world x -189..-183) and avenue i (x -171..-165), cross streets 5, 8 and 10; towers on a-d
-G = CityGrid(-219.0, -147.0, 10, 10)
+# the street district: the low-rise blocks south-west of the HQ ring.  Avenue b (world x -189..-183) runs the whole length, avenue
+# e (x -171..-165) from row 3; cross streets 1 (north) and 6-7 (south); blocks on c3-c5, a2-a5, f1-g2.
+G = CityGrid(-195.0, -135.0, 7, 7)
+
+
+def _frame():
+    """the camera window: the district centre on MAP_C, clamped to the 4k plate; snapped to 0.5 px so the 4k crop is whole pixels"""
+    gx, gy = G.sp1080(G.nc / 2, G.nr / 2)
+    ww, wh = W / VIEW_ZOOM, H / VIEW_ZOOM
+    ox = min(max(gx - MAP_C[0] / VIEW_ZOOM, 0.0), 1920.0 - ww)
+    oy = min(max(gy - MAP_C[1] / VIEW_ZOOM, 0.0), 1080.0 - wh)
+    return min(round(ox * 2), math.floor((1920.0 - ww) * 2)) / 2, min(round(oy * 2), math.floor((1080.0 - wh) * 2)) / 2
+
+
+VIEW_O = _frame()
 
 
 def ground_vis_ss():
@@ -123,9 +138,9 @@ def ground_vis_ss():
     to the raid window and scaled up (the mask is coarser than the picture: 2 px steps)"""
     C = city()
     gv = (~C.occlusion_screen(tol=1.6)).astype(np.uint8) * 255
-    ox, oy = int(VIEW_O[0]), int(VIEW_O[1])
-    crop = Image.fromarray(gv).crop((ox, oy, ox + int(W / VIEW_ZOOM), oy + int(H / VIEW_ZOOM)))
-    return crop.resize((W * SS, H * SS), Image.BILINEAR).filter(ImageFilter.GaussianBlur(SS))
+    ox, oy = VIEW_O
+    box = (ox, oy, ox + W / VIEW_ZOOM, oy + H / VIEW_ZOOM)
+    return Image.fromarray(gv).resize((W * SS, H * SS), Image.BILINEAR, box=box).filter(ImageFilter.GaussianBlur(SS * 1.5))
 
 
 _GV = {}
@@ -146,19 +161,21 @@ def masked_ground(img, L, ghost=0.22):
 def city_plate(dim=1.0):
     """the native-resolution city, desaturated and darkened under the glass: the district reads, the flanks under the panels
     and the towers below calm down"""
-    ox, oy = int(VIEW_O[0] * 2), int(VIEW_O[1] * 2)
-    s = int(round(2 * W / VIEW_ZOOM))
-    src = Image.open(CITY4K).convert('RGB').crop((ox, oy, ox + s, oy + int(round(2 * H / VIEW_ZOOM))))
-    if src.size != (W, H):                                  # only when VIEW_ZOOM > 2: Lanczos up + a light unsharp
-        src = src.resize((W, H), Image.LANCZOS).filter(ImageFilter.UnsharpMask(1.2, 60, 2))
+    ox, oy = VIEW_O[0] * 2, VIEW_O[1] * 2
+    box = (ox, oy, ox + 2 * W / VIEW_ZOOM, oy + 2 * H / VIEW_ZOOM)
+    src = Image.open(CITY4K).convert('RGB')
+    if VIEW_ZOOM == 2.0:
+        src = src.crop(tuple(int(v) for v in box))
+    else:                                                   # past native: Lanczos up from the float box + a light unsharp
+        src = src.resize((W, H), Image.LANCZOS, box=box).filter(ImageFilter.UnsharpMask(1.4, 70, 2))
     a = np.asarray(src).astype(np.float32) / 255.0
     lum = (a @ np.array([0.299, 0.587, 0.114], np.float32))[..., None]
     a = lum + (a - lum) * 0.72
     yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
     cx, cy = G.cc(G.nc / 2 - 0.5, G.nr / 2 - 0.5)
-    e = np.sqrt(((xx - cx) / 560.0) ** 2 + ((yy - cy) / 380.0) ** 2)
-    k = 0.52 + 0.43 * np.clip(1.25 - e, 0, 1) ** 1.2
-    for x0, x1 in ((0, 530), (1390, W)):
+    e = np.sqrt(((xx - cx) / 640.0) ** 2 + ((yy - cy) / 420.0) ** 2)
+    k = 0.56 + 0.40 * np.clip(1.25 - e, 0, 1) ** 1.2
+    for x0, x1 in ((0, int(520 * UI_S)), (W - int(520 * UI_S), W)):
         m = np.clip(np.minimum(xx - x0 + 60, x1 - xx + 60) / 60.0, 0, 1)
         k = k * (1 - 0.42 * m)
     a = a * (k * dim)[..., None] * np.array([0.93, 0.99, 1.08], np.float32)
@@ -376,7 +393,7 @@ def unit_bits(img, kind, x, y, seed=3, r=20, spread=60, lift=28):
 
 
 # =============================================================================================== operatives on the city: R3 class beacons
-def beacon(img, oid, c, r, alpha=1.0, height=15.0):
+def beacon(img, oid, c, r, alpha=1.0, height=8.5):
     """2D stand-in for the R3 class beacon (bible 4.8): a cone opening up from the pad on the cell to a cap ring, the class
     emblem as a scanlined holo disc in the role colour (no light behind it)"""
     top, bot = K.OPS[oid]['col']
@@ -384,8 +401,8 @@ def beacon(img, oid, c, r, alpha=1.0, height=15.0):
     cx, cy = G.cc(c, r, lift=height)
     k = (abs(G.sp(1, 0)[0] - G.sp(0, 0)[0]) / 6.0) * math.sqrt(2)      # screen px per BU, horizontal, for a world circle
     ky = (abs(G.sp(1, 0)[1] - G.sp(0, 0)[1]) / 6.0) * math.sqrt(2)
-    pr_x, pr_y = 2.3 * k, 2.3 * ky
-    cr_x, cr_y = 4.9 * k, 4.9 * ky
+    pr_x, pr_y = 1.6 * k, 1.6 * ky                                   # sized to the cell (3 BU half-width)
+    cr_x, cr_y = 2.8 * k, 2.8 * ky
     a = alpha
     L = Layer(); d = L.d
     # the pad on the ground
@@ -445,32 +462,29 @@ def route_cells(spec):
     return out
 
 
-SAFE = (7, 9)
-RA = route_cells([(5, 0), (5, 9), (7, 9)])[:-1]            # A: down avenue f from the north, then along street 10
-RB = route_cells([(9, 7), (8, 7), (8, 9), (7, 9)])[:-1]    # B: in from the east along street 8, then down avenue i
-ENT_A, ENT_B = (5, -2), (11, 7)
-BARR = (5, 6)
-BARR_UP, BARR_UP2 = (5, 5), (5, 4)                          # the cells before the wall on A (held trooper, the kill)
-PLACED = {'KAI': (4, 7), 'VEX': (6, 3), 'MOTH': (4, 9)}
+SAFE = (2, 6)
+RA = route_cells([(0, 0), (1, 0), (1, 6)])                 # A: in from the north-west along street 1, then down avenue b
+RB = route_cells([(6, 5), (3, 5), (3, 6)])                 # B: in from the south-east along street 6, then one cell down to 7
+ENT_A, ENT_B = (-2, 0), (8, 5)                              # where each stack waits, off the district
+BARR = (1, 3)
+BARR_UP, BARR_UP2 = (1, 2), (1, 1)                          # the cells before the wall on A (held trooper, the kill)
+PLACED = {'KAI': (2, 1), 'VEX': (4, 4), 'MOTH': (0, 6)}
 WHERE = {k: G.name(*v) for k, v in PLACED.items()}
-HOVER = (8, 6)
-BEST = [((8, 6), '+3'), ((7, 7), '+2'), ((7, 8), '+1')]
-BEST_NUDGE = {(7, 8): (78, 26)}                               # h9 sits under the Safehouse sticker: its label beside it
+HOVER = (4, 6)
+BEST = [((4, 6), '+3'), ((5, 6), '+2'), ((6, 4), '+1')]
 N_BARR, N_HOVER = G.name(*BARR), G.name(*HOVER)
+STICK = dict(safe=0.66, barricade=0.56, site=0.66, core=0.56)   # map stickers sized to about one cell (145 x 93 px at 3.5x)
+
+
+def cell_w():
+    """the screen width of one cell diamond"""
+    return abs(G.sp(1, 0)[0] - G.sp(0, 1)[0])
 
 
 def leak_at():
-    """where the B leak note sits: under the B route, right of the Safehouse"""
-    sx, sy = G.cc(*SAFE)
-    return sx + 150, sy + 56
-
-
-def route_pts(cells, entry, end=None, lead=1.2):
-    p0 = G.cc(*entry)
-    pts = [p0] + [G.cc(*c) for c in cells]
-    if end:
-        pts.append(G.cc(*end))
-    return pts
+    """where the B leak note sits: under the Safehouse, left of RUNE's reach"""
+    x, y = G.cc(*SAFE)
+    return x - 50, y + 104
 
 
 def edge_pt(entry, first):
@@ -480,74 +494,115 @@ def edge_pt(entry, first):
     return G.sp(first[0] + 0.5 - 0.5 * dx, first[1] + 0.5 - 0.5 * dy)
 
 
-def route_line(cells, entry, end, k=0.32):
+def route_line(cells, entry, end, k=0.5):
+    """the route through the cell centres: from the waiting stack, cell to cell, to the edge of the end cell"""
     pts = [G.cc(*entry)] + [G.cc(*c) for c in cells]
     a, b = pts[-1], G.cc(*end)
     pts.append((a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k))
     return pts
 
 
+def route_ground(img, cells, entry, end, col=None, part='tint'):
+    """system: the cells a route travels, tinted on the ground, with a small chevron per cell in the travel direction; the
+    entry cell (where the stack waits, off the district) tinted stronger with a solid edge"""
+    col = col or (255, 60, 70)
+    L = Layer(); d = L.d
+    Lc = Layer(); dc_ = Lc.d
+    path = [entry] + list(cells)
+    for n, cell in enumerate(path):
+        q = G.quad(cell[0], cell[1], 0.06)
+        first = n == 0
+        d.polygon([(S(x), S(y)) for x, y in q], fill=col + (70 if first else 52,))
+        if first:
+            d.line([(S(x), S(y)) for x, y in q + [q[0]]], fill=col + (220,), width=S(2.4))
+        nxt = path[n + 1] if n + 1 < len(path) else end
+        sc, sr = (nxt[0] > cell[0]) - (nxt[0] < cell[0]), (nxt[1] > cell[1]) - (nxt[1] < cell[1])
+        pc, pr_ = abs(sr), abs(sc)                                 # the other lattice axis: the chevron lies flat on the ground
+        oc, orr = cell[0] + 0.5, cell[1] + 0.5
+        for t in (-0.18, 0.16):                                   # two chevrons per cell, in the travel direction
+            v = [G.sp(oc + sc * (t - 0.12) + pc * 0.24, orr + sr * (t - 0.12) + pr_ * 0.24), G.sp(oc + sc * t, orr + sr * t),
+                 G.sp(oc + sc * (t - 0.12) - pc * 0.24, orr + sr * (t - 0.12) - pr_ * 0.24)]
+            dc_.line([(S(x), S(y)) for x, y in v], fill=INK + (170,), width=S(7), joint='curve')
+            dc_.line([(S(x), S(y)) for x, y in v], fill=col + (255,), width=S(3.6), joint='curve')
+    if part == 'tint':
+        masked_ground(img, L, ghost=0.55)
+    else:                                                       # the chevrons go over the route pencil
+        masked_ground(img, Lc, ghost=0.8)
+
+
+def end_cell(img, cell, col=(255, 110, 196)):
+    """system: the cell a route ends on (Safehouse / site), tinted in its sticker colour with a solid edge"""
+    L = Layer(); d = L.d
+    q = G.quad(cell[0], cell[1], 0.04)
+    d.polygon([(S(x), S(y)) for x, y in q], fill=col + (70,))
+    d.line([(S(x), S(y)) for x, y in q + [q[0]]], fill=col + (240,), width=S(2.6))
+    masked_ground(img, L, ghost=0.6)
+
+
 ROUNDS = R.ROUNDS
 
 
-def map_objects(img, barricade=True, safe=False, placed=PLACED, hp_scale=0.8):
+def map_objects(img, barricade=True, safe=False, placed=PLACED):
     """runner objects on the glass over their cells: the Safehouse, the barricade; the operatives are beacons on the city"""
     tops = {}
     for oid, (c, r) in sorted(placed.items(), key=lambda kv: G.cc(*kv[1])[1]):        # on the city, under the glass
         tops[oid] = beacon(img, oid, c, r)
     if barricade:
         bx, by = G.cc(*BARR)
-        # laid across the street: the A route runs along +j here (screen down-left), the barricade across it
-        stick(img, K.dev_sticker('BARRICADE'), bx - 2, by - 14, -33, scale=hp_scale)
+        # laid across the street: A runs along +j here (screen down-left), the barricade across it, one cell long
+        stick(img, K.dev_sticker('BARRICADE'), bx, by - 6, -33, scale=STICK['barricade'])
     if safe:
         safehouse(img)
     return tops
 
 
 def safehouse(img):
-    """the Safehouse sticker, slapped over the end of both routes (drawn after the route pencil, so the routes run into it)"""
+    """the Safehouse sticker on its cell (drawn after the route pencil, so the routes run into it)"""
     x, y = G.cc(*SAFE)
-    stick(img, K.place_sticker('SAFE', 'HOUSE', (255, 110, 196), (222, 24, 136)), x + 2, y - 30, -3, scale=1.0)
+    stick(img, K.place_sticker('SAFE', 'HOUSE', (255, 110, 196), (222, 24, 136)), x, y - 12, -3, scale=STICK['safe'])
+
+
+def routes_ground(img, a=True, b=True, part='tint'):
+    if a:
+        route_ground(img, RA, ENT_A, SAFE, part=part)
+    if b:
+        route_ground(img, RB, ENT_B, SAFE, part=part)
+    if part == 'tint':
+        end_cell(img, SAFE)
 
 
 def routes(pr, a=True, b=True):
     if a:
-        K.route(pr, route_line(RA, ENT_A, SAFE), off=14)
+        K.route(pr, route_line(RA, ENT_A, SAFE), off=0)
         K.entry_mark(pr, *edge_pt(ENT_A, RA[0]), 'A')
     if b:
-        K.route(pr, route_line(RB, ENT_B, SAFE), off=14)
+        K.route(pr, route_line(RB, ENT_B, SAFE), off=0)
         K.entry_mark(pr, *edge_pt(ENT_B, RB[0]), 'B')
 
 
-def stop_bar(p, cell_from, cell_to, t=0.55, half=26):
-    """the yellow stop bar across the route where it holds (perpendicular to the street on screen)"""
-    a, b = G.cc(*cell_from), G.cc(*cell_to)
-    mx, my = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
-    dx, dy = b[0] - a[0], b[1] - a[1]
-    n = math.hypot(dx, dy); dx, dy = dx / n, dy / n
-    # perpendicular on the ground: the other lattice axis
-    if cell_from[0] != cell_to[0]:
-        ox, oy = G.sp(1, 1)[0] - G.sp(1, 0)[0], G.sp(1, 1)[1] - G.sp(1, 0)[1]
-    else:
-        ox, oy = G.sp(1, 1)[0] - G.sp(0, 1)[0], G.sp(1, 1)[1] - G.sp(0, 1)[1]
-    on = math.hypot(ox, oy); ox, oy = ox / on, oy / on
-    p0, p1 = (mx - ox * half, my - oy * half), (mx + ox * half, my + oy * half)
-    p.stroke(p.wobble([p0, p1], 0.8), 8, taper=False)
-    for e in (p0, p1):
-        p.stroke([(e[0] - dx * 9, e[1] - dy * 9), (e[0] + dx * 9, e[1] + dy * 9)], 5, taper=False)
+def wall_hp(py, a, b, size=26):
+    """the barricade's health: a small pencil value beside its sticker (the only pencil on the wall)"""
+    bx, by = G.cc(*BARR)
+    K.pen_arrow_num(py, a, b, bx - 100, by + 8, size)
 
 
 def plan_pencil(py, pr, leak=True):
-    stop_bar(py, BARR_UP, BARR, t=0.12, half=48)
-    bx, by = G.cc(*BARR)
-    py.text('holds ' + N_BARR, bx - 310, by + 80, 34, angle=-6)
-    K.pen_arrow_num(py, 6, 3, bx - 340, by + 34, 32)
+    wall_hp(py, 6, 3)
     if leak:
         lx, ly = leak_at()
-        pr.text('2 leak', lx, ly, 34, angle=-6)
+        pr.text('2 leak', lx, ly, 32, angle=-6)
         sx, sy = G.cc(*SAFE)
-        pr.arrow([(lx - 62, ly + 2), (lx - 78, ly - 12), (sx + 64, sy + 20)], width=7, head=16)
-        K.pen_arrow_num(pr, 8, 6, sx - 36, sy + 66, 34)
+        pr.arrow([(lx + 12, ly - 22), (lx + 22, ly - 40), (sx - 8, sy + 46)], width=6, head=14)
+        K.pen_arrow_num(pr, 8, 6, sx - 150, sy + 10, 30)
+
+
+def ui(img, fn, anchor, s=None):
+    """a side column (or a chip) drawn on its own layer at full size, then shrunk by UI_S towards its anchor on the screen"""
+    s = s or UI_S
+    L = blank()
+    fn(L)
+    sm = L.resize((int(round(L.width * s)), int(round(L.height * s))), Image.LANCZOS)
+    img.alpha_composite(sm, (int(round(anchor[0] * SS * (1 - s))), int(round(anchor[1] * SS * (1 - s)))))
 
 
 def left_col(img, F, where, core=8, lose=0, credits=7, cost=0, rnd=(1, 4), title='RAID: STATIC ALLEY', kills=None, held=None,
@@ -712,23 +767,24 @@ def units_at_rest(img, alpha=1.0):
 def plate_plan():
     F = F_all(); img = blank()
     draw_grid(img, F)
+    routes_ground(img)
     map_objects(img)
     py, pr = Wax(PEN_Y, 1), Wax(PEN_R, 2)
     routes(pr)
     plan_pencil(py, pr)
     py.ink_ss(img); pr.ink_ss(img)
+    routes_ground(img, part='chev')
     safehouse(img)
     units_at_rest(img)
-    left_col(img, F, WHERE, lose=2)
-    right_col(img, F)
-    K.hud_line(img, F, 'FORECAST', [('A holds at ' + N_BARR, S_GAIN), DOT, ('B 2 leak', S_HARM), DOT, ('Core 8 \u2192 6', S_HARM), DOT,
+    ui(img, lambda L: left_col(L, F, WHERE, lose=2), (0, 0))
+    ui(img, lambda L: right_col(L, F), (W, 0))
+    K.hud_line(img, F, 'FORECAST', [('A holds at ' + N_BARR, S_GAIN), DOT, ('B 2 leak', S_HARM), DOT, ('Core 8 → 6', S_HARM), DOT,
                                     ('6/8 killed', S_HI)])
     return img
 
 
 # ---------------------------------------------------------------- 2. place: RUNE held, Takeover's drag (spring lag)
 def pen_hatch_quad(p, q, step=14, w=5):
-    pts = q + [q[0], q[1]]
     p.stroke(p.wobble(q + [q[0]], 1.0), w, taper=False)
     cx = sum(x for x, _ in q) / 4; cy = sum(y for _, y in q) / 4
     for a, b in zip(q, q[1:] + q[:1]):
@@ -745,49 +801,52 @@ def plate_place():
     occ = set(PLACED.values()) | {BARR, SAFE}
     legal = legal_cells(RA + RB, occ)
     draw_grid(img, F, legal=legal)
+    routes_ground(img)
     map_objects(img)
     py, pr = Wax(PEN_Y, 3), Wax(PEN_R, 4)
     routes(pr)
     plan_pencil(py, pr, leak=False)
-    # the preview: reach (Chebyshev 1 round l7) hatched on the ground cells, the hovered cell circled, kills-if-placed
+    # the preview: reach (Chebyshev 1) hatched on the district's cells, the hovered cell circled, kills-if-placed
     hc, hr = HOVER
-    pen_hatch_quad(py, [G.sp(hc - 1, hr - 1), G.sp(hc + 2, hr - 1), G.sp(hc + 2, hr + 2), G.sp(hc - 1, hr + 2)])
+    c0, c1, r0, r1 = max(hc - 1, 0), min(hc + 2, G.nc), max(hr - 1, 0), min(hr + 2, G.nr)
+    pen_hatch_quad(py, [G.sp(c0, r0), G.sp(c1, r0), G.sp(c1, r1), G.sp(c0, r1)])
     hx, hy = G.cc(*HOVER)
-    py.circle(hx, hy, 50, 33, width=7, start=-2.2, over=0.5, tilt=0)
-    ps = Wax(PEN_Y, 33)                                  # inked after the red: the strike, and a label that sits on a route
+    py.circle(hx, hy, 54, 34, width=6, start=-2.2, over=0.5, tilt=0)
+    ps = Wax(PEN_Y, 33)                                  # inked after the red: the strike
     for (c, r), s_ in BEST:
         x, y = G.cc(c, r)
         if (c, r) == HOVER:
-            py.text(s_, x - 40, y - 100, 44, angle=-6)
+            py.text(s_, x - 6, y - 62, 40, angle=-6)
         else:
-            nx, ny = BEST_NUDGE.get((c, r), (0, 0))
-            (ps if (c, r) in BEST_NUDGE else py).text(s_, x + nx, y + 2 + ny, 32, angle=-6)
-    # B no longer leaks: the red "2 leak" struck through in yellow, 0 beside it; "safe" by the Safehouse
+            py.text(s_, x, y + 2, 30, angle=-6)
+    # B no longer leaks: the red "2 leak" struck through in yellow, 0 under it; "safe" by the Safehouse
     lx, ly = leak_at()
-    pr.text('2 leak', lx, ly, 34, angle=-6)
-    py.text('0', lx - 84, ly + 2, 40, angle=-6)
+    pr.text('2 leak', lx, ly, 32, angle=-6)
+    py.text('0', lx + 4, ly + 40, 38, angle=-6)
     sx, sy = G.cc(*SAFE)
-    py.text('safe', sx - 40, sy + 66, 36, angle=-6)
-    # the held sticker trails the pointer (spring lag): it is still catching up, below right of the pointer, tilted into the
-    # motion; the yellow plan arrow runs from it to the hovered cell
+    py.text('safe', sx - 140, sy + 10, 32, angle=-6)
+    # the held sticker trails the pointer (spring lag): still catching up, below right of the pointer, tilted into the motion;
+    # the yellow plan arrow runs from it to the hovered cell
     cxp, cyp = hx + 10, hy + 8
-    hold = (1300, 830)
-    py.arrow([(hold[0] - 70, hold[1] - 76), (hold[0] - 150, hold[1] - 112), (hx + 70, hy - 52), (hx + 40, hy - 26)], width=7, head=20)
+    hold = (hx + 175, hy + 150)
+    py.arrow([(hold[0] - 58, hold[1] - 46), (hold[0] - 96, hold[1] - 92), (hx + 62, hy + 12), (hx + 40, hy + 2)], width=6, head=16)
     py.ink_ss(img); pr.ink_ss(img)
-    ps.stroke(ps.wobble([(lx - 52, ly + 8), (lx + 52, ly - 8)], 0.6), 7, taper=False)
+    ps.stroke(ps.wobble([(lx - 50, ly + 8), (lx + 50, ly - 8)], 0.6), 6, taper=False)
     ps.ink_ss(img)
+    routes_ground(img, part='chev')
     safehouse(img)
     units_at_rest(img)
-    left_col(img, F, WHERE, held='RUNE')
+    ui(img, lambda L: left_col(L, F, WHERE, held='RUNE'), (0, 0))
+    hs = 0.86 * UI_S                                     # the held sticker keeps its CREW size (lifted a touch)
     L = Layer(); d = L.d                                 # motion streaks on the trailing side
-    for k, (ox, oy) in enumerate(((84, 92), (104, 64), (60, 112))):
-        d.line([(S(hold[0] + ox), S(hold[1] + oy)), (S(hold[0] + ox + 46), S(hold[1] + oy + 58))], fill=(235, 230, 255, 80 - k * 18), width=S(3))
+    for k, (ox, oy) in enumerate(((60, 66), (76, 44), (42, 82))):
+        d.line([(S(hold[0] + ox), S(hold[1] + oy)), (S(hold[0] + ox + 34), S(hold[1] + oy + 42))], fill=(235, 230, 255, 80 - k * 18), width=S(3))
     comp(img, L)
-    stick(img, K.op_sticker('RUNE', curl=0.30), hold[0], hold[1], 9, scale=0.86, lift=1.0)
-    stick(img, K.wpn_sticker('SHOTGUN', 1), hold[0] + 72 * 0.86 - 10, hold[1] - 66 * 0.86 - 14, 16, scale=0.72, lift=1.0)
+    stick(img, K.op_sticker('RUNE', curl=0.30), hold[0], hold[1], 9, scale=hs, lift=1.0)
+    stick(img, K.wpn_sticker('SHOTGUN', 1), hold[0] + 72 * hs - 8, hold[1] - 66 * hs - 10, 16, scale=0.72 * UI_S, lift=1.0)
     cursor(img, cxp, cyp)
-    right_col(img, F)
-    K.hud_line(img, F, 'IF PLACED ' + N_HOVER, [('B 2 leak', S_HARM), ('\u2192', S_MID), ('0 leak', S_GAIN), DOT, ('Core safe', S_GAIN), DOT,
+    ui(img, lambda L: right_col(L, F), (W, 0))
+    K.hud_line(img, F, 'IF PLACED ' + N_HOVER, [('B 2 leak', S_HARM), ('→', S_MID), ('0 leak', S_GAIN), DOT, ('Core safe', S_GAIN), DOT,
                                         ('8/8 killed', S_HI)])
     return img
 
@@ -796,26 +855,31 @@ def plate_place():
 def plate_shop():
     F = F_all(); img = blank()
     draw_grid(img, F)
+    routes_ground(img)
     map_objects(img)
     py, pr = Wax(PEN_Y, 5), Wax(PEN_R, 6)
     routes(pr)
     plan_pencil(py, pr)
     py.ink_ss(img); pr.ink_ss(img)
+    routes_ground(img, part='chev')
     safehouse(img)
     units_at_rest(img)
-    left_col(img, F, WHERE, lose=2, cost=3)
-    sx, sy, sa = K.CREW_POS['RUNE']
-    wx, wy = sx + K.WPN_OFF[0], sy + K.WPN_OFF[1]
-    stick(img, K.wpn_sticker('SHOTGUN', 1, cost=3, curl=0.16), wx - 8, wy - 54, 3, scale=0.84, lift=0.7)
-    py = Wax(PEN_Y, 7)
-    py.text('MERGE', 214, 744, 32, angle=-5)
-    K.pen_star(py, 296, 742); py.text('+', 322, 744, 30); K.pen_star(py, 348, 742)
-    py.arrow([(368, 744), (386, 742), (404, 743)], width=5, head=10)
-    K.pen_star(py, 428, 742); K.pen_star(py, 454, 740)
-    py.arrow([(534, 428), (546, 452), (534, 474)], width=5, head=12)
-    py.ink_ss(img)
-    right_col(img, F, peeled='SHOTGUN')
-    K.hud_line(img, F, 'BUY', [('SHOTGUN on RUNE', S_PLAN), ('merges, 1 \u2192 2 stars', S_GAIN), DOT, ('3 credits: 7 \u2192 4', S_HI)])
+
+    def left(L):
+        left_col(L, F, WHERE, lose=2, cost=3)
+        sx, sy, sa = K.CREW_POS['RUNE']
+        wx, wy = sx + K.WPN_OFF[0], sy + K.WPN_OFF[1]
+        stick(L, K.wpn_sticker('SHOTGUN', 1, cost=3, curl=0.16), wx - 8, wy - 54, 3, scale=0.84, lift=0.7)
+        p = Wax(PEN_Y, 7)
+        p.text('MERGE', 214, 744, 32, angle=-5)
+        K.pen_star(p, 296, 742); p.text('+', 322, 744, 30); K.pen_star(p, 348, 742)
+        p.arrow([(368, 744), (386, 742), (404, 743)], width=5, head=10)
+        K.pen_star(p, 428, 742); K.pen_star(p, 454, 740)
+        p.arrow([(534, 428), (546, 452), (534, 474)], width=5, head=12)
+        p.ink_ss(L)
+    ui(img, left, (0, 0))
+    ui(img, lambda L: right_col(L, F, peeled='SHOTGUN'), (W, 0))
+    K.hud_line(img, F, 'BUY', [('SHOTGUN on RUNE', S_PLAN), ('merges, 1 → 2 stars', S_GAIN), DOT, ('3 credits: 7 → 4', S_HI)])
     return img
 
 
@@ -827,6 +891,7 @@ def tracer(img, p0, p1, col):
 def plate_playback():
     F = F_all(); img = blank()
     draw_grid(img, F)
+    routes_ground(img)
     placed = dict(PLACED, RUNE=HOVER)
     for oid in ('KAI', 'VEX'):
         k = K.OPS[oid]['reach']
@@ -836,9 +901,9 @@ def plate_playback():
     unit(img, 'trooper', *G.cc(*ENT_A), 1.0, count=3, alpha=0.38)
     unit(img, 'bike', *G.cc(*ENT_B), 1.0, count=1, alpha=0.38)
     hx, hy = G.cc(*BARR_UP)
-    bx, by = G.cc(8, 7)
-    L = Layer()                                         # glide: a short smear behind the bike (it came along from j8)
-    ux, uy = G.cc(9, 7)[0] - bx, G.cc(9, 7)[1] - by
+    bx, by = G.cc(5, 5)
+    L = Layer()                                         # glide: a short smear behind the bike (it came along from g6)
+    ux, uy = G.cc(6, 5)[0] - bx, G.cc(6, 5)[1] - by
     for k in range(5):
         L.d.line([(S(bx + ux * (0.35 + k * 0.12)), S(by - 28 + uy * (0.35 + k * 0.12))), (S(bx + ux * (0.45 + k * 0.12)), S(by - 28 + uy * (0.45 + k * 0.12)))],
                  fill=(170, 230, 230, 140 - k * 24), width=S(3))
@@ -846,50 +911,53 @@ def plate_playback():
     pr0 = Wax(PEN_R, 10)                                  # the routes first: the live icons ride on top of the pencil
     routes(pr0)
     pr0.ink_ss(img)
+    routes_ground(img, part='chev')
     unit(img, 'trooper', hx, hy, 0.5, pips=('H',), r=22)
     unit(img, 'bike', bx, by, 0.5, pips=('S',), r=22)
     # FX: tracers from the beacons, the kill bursting into bits, damage pops
     kx, ky = tops['KAI']; vx, vy = tops['VEX']
-    tracer(img, (kx, ky), (hx - 8, hy - 28), K.OPS['KAI']['col'][1])
+    tracer(img, (kx, ky), (hx + 8, hy - 28), K.OPS['KAI']['col'][1])
     ex, ey = G.cc(*BARR_UP2)
     tracer(img, (kx, ky), (ex + 4, ey - 24), K.OPS['KAI']['col'][1])
     tracer(img, (vx, vy), (bx - 12, by - 28), K.OPS['VEX']['col'][1])
     unit_bits(img, 'trooper', ex, ey, spread=52)
     py, pr = Wax(PEN_Y, 9), Wax(PEN_R, 12)
     # the value of each status in pencil beside its ring pip
-    py.text('2', hx + 62, hy - 84, 34, angle=-6)
-    py.text('1', bx + 62, by - 84, 34, angle=-6)
-    brx, bry = G.cc(*BARR)
-    K.pen_arrow_num(py, 6, 4, brx - 340, bry + 34, 32)      # the barricade's hp, live
-    for (x, y) in ((kx - 58, ky - 30), (vx - 54, vy - 40)):  # kill tallies by KAI and VEX
+    py.text('2', hx + 58, hy - 82, 32, angle=-6)
+    py.text('1', bx + 58, by - 82, 32, angle=-6)
+    wall_hp(py, 6, 4)                                     # the barricade's hp, live
+    for (x, y) in ((kx + 52, ky - 34), (vx + 52, vy - 40)):  # kill tallies by KAI and VEX
         py.x(x, y, 11, 6)
     py.ink_ss(img); pr.ink_ss(img)
     safehouse(img)
-    K.pop(img, F, hx - 78, hy - 84, '\u22124')
-    K.pop(img, F, bx - 20, by - 116, '\u22123')
-    stick(img, K.word_sticker('HELD + BOMBARD \u00d72', (255, 110, 196), (222, 24, 136)), hx - 330, hy - 96, -4)      # left of the wall, clear of KAI and the Safehouse
-    left_col(img, F, dict(WHERE, RUNE=G.name(*HOVER)))
-    right_col(img, F, state='busy', locked=True)
+    K.pop(img, F, hx - 76, hy - 80, '−4')
+    K.pop(img, F, bx + 40, by - 108, '−3')
+    stick(img, K.word_sticker('HELD + BOMBARD ×2', (255, 110, 196), (222, 24, 136)), hx - 220, hy - 34, -4, scale=0.86)
+    ui(img, lambda L: left_col(L, F, dict(WHERE, RUNE=G.name(*HOVER))), (0, 0))
+    ui(img, lambda L: right_col(L, F, state='busy', locked=True), (W, 0))
     K.hud_line(img, F, 'TICK 3/8', [('killed 2', S_GAIN), DOT, ('leaked 0', S_HI), DOT, ('1 held at a wall', S_HI), DOT,
                                     ('4 still to enter', S_MID)], ticks=(3, 8))
     return img
 
 
 # =============================================================================================== 5. the site raid (SITE B2) on the same streets
-SITE, SCORE = (5, 7), (4, 7)                                # the site on the f8 crossing, its core one cell west (off the lanes)
-SA = [(c, 7) for c in range(9, 5, -1)]                     # A: in from the east along street 8
-SB = [(5, r) for r in range(0, 7)]                         # B: down avenue f from the north
-SC = [(5, 9), (5, 8)]                                      # C: up avenue f from the south edge
-S_ENT = {'A': (11, 7), 'B': (5, -2), 'C': (5, 11)}
-S_KAI, S_VEX = (8, 6), (4, 9)
-SROUNDS = [('ROUND 1 (now)  \u00b7  7 units', [('A', 'trooper', 'Trooper', 3), ('B', 'riot', 'Riot', 2), ('C', 'drone', 'Drone', 2)]),
-           ('ROUND 2  \u00b7  8 units', [(None, 'trooper', 'Trooper', 4), (None, 'bike', 'Bike', 2), (None, 'drone', 'Drone', 2)]),
-           ('ROUND 3  \u00b7  9 units', [(None, 'heavy', 'Heavy', 2), (None, 'riot', 'Riot', 3), (None, 'trooper', 'Trooper', 4)])]
+SITE, SCORE = (1, 5), (0, 5)                                # the site on the b6 crossing, its core one cell west (off the lanes)
+SA = [(c, 5) for c in range(6, 1, -1)]                     # A: in from the south-east along street 6
+SB = [(1, r) for r in range(0, 5)]                         # B: down avenue b from the north
+SC = [(1, 6)]                                              # C: up avenue b from the south-west edge
+S_ENT = {'A': (8, 5), 'B': (1, -2), 'C': (1, 8)}
+S_KAI, S_VEX = (4, 4), (0, 6)
+SROUNDS = [('ROUND 1 (now)  ·  7 units', [('A', 'trooper', 'Trooper', 3), ('B', 'riot', 'Riot', 2), ('C', 'drone', 'Drone', 2)]),
+           ('ROUND 2  ·  8 units', [(None, 'trooper', 'Trooper', 4), (None, 'bike', 'Bike', 2), (None, 'drone', 'Drone', 2)]),
+           ('ROUND 3  ·  9 units', [(None, 'heavy', 'Heavy', 2), (None, 'riot', 'Riot', 3), (None, 'trooper', 'Trooper', 4)])]
 
 
 def plate_site():
     F = F_all(); img = blank()
     draw_grid(img, F)
+    for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
+        route_ground(img, cells, S_ENT[lt], SITE)
+    end_cell(img, SITE, col=(150, 236, 130))
     tops = {}
     for oid, cell in (('KAI', S_KAI), ('VEX', S_VEX)):
         tops[oid] = beacon(img, oid, *cell)
@@ -897,36 +965,38 @@ def plate_site():
     cx, cy = G.cc(*SCORE)
     py, pr = Wax(PEN_Y, 11), Wax(PEN_R, 12)
     for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
-        K.route(pr, route_line(cells, S_ENT[lt], SITE, k=0.3), off=14)
+        K.route(pr, route_line(cells, S_ENT[lt], SITE), off=0)
         K.entry_mark(pr, *edge_pt(S_ENT[lt], cells[0]), lt)
     pr.ink_ss(img)
-    # the core one cell behind the site (sticker nudged down-left so both read), the site sticker on its cell
-    stick(img, K.place_sticker('CORE', None, (255, 110, 196), (222, 24, 136), shape='hex', w=100, h=64), cx - 36, cy + 30, 3, scale=0.74)
-    L = Layer(); text(L.d, (cx + 4, cy - 76), '8/8', F['a40'], TEXT_HI + (255,), stroke=2, sfill=INK + (255,)); comp(img, L)
-    stick(img, K.place_sticker('B2', 'SITE', (150, 236, 130), (62, 170, 70), shape='socket', w=96, h=84), sx + 6, sy - 14, -3, scale=0.84)
+    for cells, lt in ((SA, 'A'), (SB, 'B'), (SC, 'C')):
+        route_ground(img, cells, S_ENT[lt], SITE, part='chev')
+    # the core on the cell west of the site, the site sticker on its cell
+    stick(img, K.place_sticker('CORE', None, (255, 110, 196), (222, 24, 136), shape='hex', w=100, h=64), cx, cy - 4, 3, scale=STICK['core'])
+    L = Layer(); text(L.d, (cx + 36, cy - 64), '8/8', F['a40'], TEXT_HI + (255,), stroke=2, sfill=INK + (255,)); comp(img, L)
+    stick(img, K.place_sticker('B2', 'SITE', (150, 236, 130), (62, 170, 70), shape='socket', w=96, h=84), sx, sy - 10, -3, scale=STICK['site'])
     pr = Wax(PEN_R, 13)
     kx, ky = tops['KAI']; vx, vy = tops['VEX']
-    py.text('B2 crew', kx + 104, ky - 30, 34, angle=-6)
-    py.arrow([(612, 858), (650, 836), (vx - 60, vy + 30), (vx - 34, vy + 14)], width=7, head=18)      # VEX came in from C2
-    py.text('from C2', 590, 890, 36, angle=-6)
+    py.text('B2 crew', kx + 96, ky - 20, 32, angle=-6)
+    py.arrow([(468, 772), (490, 720), (vx - 30, vy + 64), (vx - 18, vy + 40)], width=6, head=16)      # VEX came in from C2
+    py.text('from C2', 470, 800, 34, angle=-6)
     # forecast: B (riot) leaks 1 into the core
     bx_, by_ = G.cc(*SB[0])
-    pr.text('1 leak', bx_ + 150, by_ - 14, 36, angle=-5)
-    K.pen_arrow_num(pr, 8, 7, cx - 244, cy - 44, 34)
-    # who defends: the margin note above-left of the map, outside the district
-    py.text('who defends B2', 700, 430, 36, angle=-3)
-    py.text('KAI    B2', 650, 482, 32, angle=-3); py.tick(758, 480, 13, 6)
-    py.text('VEX    C2', 650, 530, 32, angle=-3); py.tick(758, 528, 13, 6)
+    pr.text('1 leak', bx_ + 104, by_ - 6, 34, angle=-5)
+    K.pen_arrow_num(pr, 8, 7, cx + 72, cy - 118, 30)
+    # who defends: the margin note above left of the map, outside the district
+    py.text('who defends B2', 570, 236, 34, angle=-3)
+    py.text('KAI    B2', 520, 284, 30, angle=-3); py.tick(624, 282, 12, 6)
+    py.text('VEX    C2', 520, 328, 30, angle=-3); py.tick(624, 326, 12, 6)
     py.ink_ss(img); pr.ink_ss(img)
     unit(img, 'trooper', *G.cc(*S_ENT['A']), 1.0, count=3)
     unit(img, 'riot', *G.cc(*S_ENT['B']), 1.0, count=2)
     unit(img, 'drone', *G.cc(*S_ENT['C']), 1.0, count=2)
-    K.chip(img, F, 660, 34, 'Evacuate (give up B2 without a fight, KAI back to HQ)', '', w=600)
-    left_col(img, F, {'KAI': G.name(*S_KAI), 'VEX': G.name(*S_VEX), 'MOTH': 'away:A1', 'RUNE': 'away:D4'}, lose=1,
-             title='RAID: SITE B2', rnd=(1, 3), counts=[('ON MAP', 2), ('AWAY', 2), ('DEVICES', 0)])
-    right_col(img, F, site='SITE B2', rounds=SROUNDS, target='site B2, core')
+    ui(img, lambda L: K.chip(L, F, 660, 34, 'Evacuate (give up B2 without a fight, KAI back to HQ)', '', w=600), (960, 20))
+    ui(img, lambda L: left_col(L, F, {'KAI': G.name(*S_KAI), 'VEX': G.name(*S_VEX), 'MOTH': 'away:A1', 'RUNE': 'away:D4'}, lose=1,
+                               title='RAID: SITE B2', rnd=(1, 3), counts=[('ON MAP', 2), ('AWAY', 2), ('DEVICES', 0)]), (0, 0))
+    ui(img, lambda L: right_col(L, F, site='SITE B2', rounds=SROUNDS, target='site B2, core'), (W, 0))
     K.hud_line(img, F, 'FORECAST', [('A 0 leak', S_GAIN), DOT, ('B 1 leak', S_HARM), DOT, ('C 0 leak', S_GAIN), DOT,
-                                    ('Core 8 \u2192 7', S_HARM), DOT, ('6/7 killed', S_HI)])
+                                    ('Core 8 → 7', S_HARM), DOT, ('6/7 killed', S_HI)])
     return img
 
 
@@ -935,7 +1005,7 @@ def plate_aftermath():
     F = F_all(); img = blank()
     draw_grid(img, F, labels=False)
     map_objects(img, placed={}, safe=True)
-    L = Layer(); L.d.rectangle([S(540), S(0), S(1390), S(H)], fill=(4, 6, 10, 140)); comp(img, L)
+    L = Layer(); L.d.rectangle([S(int(520 * UI_S)), S(0), S(W - int(520 * UI_S)), S(H)], fill=(4, 6, 10, 140)); comp(img, L)
     R.REPORT = [('OPERATION', 'CLEAN SWEEP'), ('TARGET', 'Cell safehouse, grid %s' % G.name(*SAFE)), ('DURATION', '4 rounds'),
                 ('UNITS COMMITTED', '34'), ('UNITS LOST', '30'), ('UNITS THROUGH', '0'), ('TARGET DAMAGE', 'none'), ('OUTCOME', None),
                 ('NEXT ACTION', 'review Heat, resubmit')]
@@ -959,30 +1029,33 @@ def plate_aftermath():
     py.ink_ss(img)
     hx, hy = P(500, RY0 + 8 * RDY + 70)
     stick(img, K.verb_sticker('HELD', (255, 238, 96), (255, 182, 14), size=110), hx, hy, R.PANG - 7, scale=1.0)
-    left_col(img, F, {}, kills={'KAI': 11, 'VEX': 9, 'MOTH': 4, 'RUNE': 6}, rnd=(4, 4), credits=12,
-             counts=[('KILLED', 30), ('LEAKED', 0)], undo=False)
-    L = Layer(); d = L.d
-    x0, y0, x1, y1 = 1404, 18, 1898, 330
-    glass(d, (x0, y0, x1, y1))
-    text(d, (x0 + 18, y0 + 28), 'RESULT', F['m20'], TEXT_MID + (255,), anchor='lm')
-    text(d, (x0 + 18, y0 + 80), 'HELD for 4 rounds', F['a48'], S_GAIN + (255,), anchor='lm')
-    text(d, (x0 + 18, y0 + 138), '30 of 34 units killed, 0 leaked', F['a28'], S_HI + (255,), anchor='lm')
-    d.line([(S(x0 + 14), S(y0 + 172)), (S(x1 - 14), S(y0 + 172))], fill=(40, 90, 110, 255), width=S(1.5))
-    text(d, (x0 + 18, y0 + 206), 'HQ untouched', F['a28'], S_GAIN + (255,), anchor='lm')
-    text(d, (x0 + 18, y0 + 250), 'Heat \u22121', F['a28'], S_GAIN + (255,), anchor='lm')
-    text(d, (x0 + 120, y0 + 251), '25 \u2192 24', F['a28'], S_HI + (255,), anchor='lm')
-    comp(img, L)
-    K.send_it(img, F, system=None, word='CONTINUE', key='Continue [SPACE]')
+    ui(img, lambda L: left_col(L, F, {}, kills={'KAI': 11, 'VEX': 9, 'MOTH': 4, 'RUNE': 6}, rnd=(4, 4), credits=12,
+                               counts=[('KILLED', 30), ('LEAKED', 0)], undo=False), (0, 0))
+
+    def right(Limg):
+        Ly = Layer(); d = Ly.d
+        x0, y0, x1, y1 = 1404, 18, 1898, 330
+        glass(d, (x0, y0, x1, y1))
+        text(d, (x0 + 18, y0 + 28), 'RESULT', F['m20'], TEXT_MID + (255,), anchor='lm')
+        text(d, (x0 + 18, y0 + 80), 'HELD for 4 rounds', F['a48'], S_GAIN + (255,), anchor='lm')
+        text(d, (x0 + 18, y0 + 138), '30 of 34 units killed, 0 leaked', F['a28'], S_HI + (255,), anchor='lm')
+        d.line([(S(x0 + 14), S(y0 + 172)), (S(x1 - 14), S(y0 + 172))], fill=(40, 90, 110, 255), width=S(1.5))
+        text(d, (x0 + 18, y0 + 206), 'HQ untouched', F['a28'], S_GAIN + (255,), anchor='lm')
+        text(d, (x0 + 18, y0 + 250), 'Heat −1', F['a28'], S_GAIN + (255,), anchor='lm')
+        text(d, (x0 + 120, y0 + 251), '25 → 24', F['a28'], S_HI + (255,), anchor='lm')
+        comp(Limg, Ly)
+        K.send_it(Limg, F, system=None, word='CONTINUE', key='Continue [SPACE]')
+    ui(img, right, (W, 0))
     return img
 
 
 # =============================================================================================== sheet
 def sheet():
-    names = [('r3_plan', 'plan', 'at rest: A down avenue f, B in along street 8, wall holds f7, B leaks 2'),
-             ('r3_place', 'place', 'RUNE held (spring lag): reach hatched, i7 circled, +3 / +2 / +1, IF PLACED'),
+    names = [('r3_plan', 'plan', 'at rest: A down avenue b, B in along street 6, wall on b4, B leaks 2'),
+             ('r3_place', 'place', 'RUNE held (spring lag): reach hatched, e7 circled, +3 / +2 / +1, IF PLACED'),
              ('r3_shop', 'shop', 'sticker sheet: SHOTGUN peeled, slapped on RUNE, merge to 2 stars'),
              ('r3_playback', 'playback', 'tick 3/8: v4 icons, ring pips + pencil values, kill bits, pops'),
-             ('r3_site', 'site raid', 'B2 on the f8 street crossing: core 8, B2 crew + C2 support, Evacuate chip'),
+             ('r3_site', 'site raid', 'B2 on the b6 street crossing: core 8, B2 crew + C2 support, Evacuate chip'),
              ('r3_aftermath', 'aftermath', "Solace after-action report, the Cell's pencil, HELD")]
     tw_, th_ = 700, 394
     pad, cap = 12, 58
@@ -990,7 +1063,7 @@ def sheet():
     sh = Image.new('RGB', (cols * tw_ + (cols + 1) * pad, 2 * (th_ + cap) + 3 * pad + 50), (14, 14, 18))
     d = ImageDraw.Draw(sh)
     f = ImageFont.truetype(MONO, 15); fa = ImageFont.truetype(ANTON, 22); fb = ImageFont.truetype(ANTON, 30)
-    d.text((pad, 10), 'RAID in DEFACE v3: set 2, on the 3D city (Solace, designer rulings 2026-11-15)', font=fb, fill=TEXT_HI)
+    d.text((pad, 10), 'RAID in DEFACE v3: set 4, the 3D city at 3.5x, smaller side columns (designer review of set 3)', font=fb, fill=TEXT_HI)
     for k, (n, t, c) in enumerate(names):
         im = Image.open(OUT + n + '.png').resize((tw_, th_), Image.LANCZOS)
         x = pad + (k % cols) * (tw_ + pad); y = 54 + pad + (k // cols) * (th_ + cap + pad)

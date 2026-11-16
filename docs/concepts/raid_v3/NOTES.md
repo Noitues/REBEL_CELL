@@ -1,73 +1,85 @@
-# Raid in Deface v3, on the 3D city (set 2), 2026-11-15
+# Raid in Deface v3, on the 3D city (set 4), 2026-11-15
 
-The raid screen in the Takeover fight's look (Deface v3, A-119), now played on the 3D Solace city as the designer ruled
+The raid screen in the Takeover fight's look (Deface v3, A-119), played on the 3D Solace city as the designer ruled
 (2026-11-15, below). The raid rules and words are prototype Variant B v39. Layout as Takeover option A: CREW, rows and core tape
 on the left; INCOMING, the shop and SEND IT on the right; the forecast HUD line at the bottom centre; the raid district in the
 centre. Concept plates only (PIL); the numbers are illustrative. The first set (2D cell grid under glass) is kept in `grid_v1/`
-as the record; it is superseded.
+as the record; it is superseded. Set 4 applies the designer's review of set 3 (the street district at 2x): smaller side
+columns, a 3.5x camera, map objects sized to a cell, routes drawn cell to cell, one barricade representation.
 
 ## The city and the raid camera
 - **Pixels:** `tide_concepts/p3_work/city_albedo4k.png` (3840x2160), the 4k render of the same frame as
-  `p2_base/city_default.png` (aligned at 0,0 px). The raid camera is the same orthographic camera **2x closer**: a native-pixel
-  1920x1080 crop of the 4k plate, window at (960, 540) on city_default (the plate's bottom-right corner). No upscale. Desaturated and darkened under the glass;
-  the district stays brightest, the flanks under the panels darkest.
+  `p2_base/city_default.png` (aligned at 0,0 px). The raid camera is the same orthographic camera **3.5x closer than
+  city_default**. That is past the 4k plate's native 2x, so the plate is **upscaled 1.75x**: a float-box crop of the 4k plate
+  (window 548.6 x 308.6 px on city_default at (1215, 771)), Lanczos to 1920x1080, then a light unsharp (radius 1.4, 70 %),
+  then the under-glass grade (desaturated, darkened away from the district and under the side columns). Edges are softer than
+  native and the halftone dots of the render are enlarged; it reads as the city, not as a sharp render.
 - **Geometry:** the camera is orthographic, so world to screen is affine. `city_geo.py` fits it from `world_pos_f16.npz`
-  (residual 0.23 px median), then maps through the crop (x2). The ground visibility mask comes from the 1080 world positions,
-  cropped and scaled 2x, so it is coarser than the picture.
-- **District:** the low-rise street block south-west of the Solace HQ ring (designer: moved off the park plaza of the first
-  set 2 render). The grid is 10 x 10 cells on the city's own 6 BU lot lattice, X0 -219, Z0 -147 (edges at 3 mod 6 BU in world x
-  and z; streets are on this lattice). Cell names a-j along the north-east edge, 1-10 along the north-west edge. The cell
-  diamond is about 82 x 53 px. Columns a-d and rows 1-2 are towers (cells there are not placeable); the open streets are
-  avenue f (world x -189..-183, the whole length), avenue i (rows 5-10), and the cross streets 3, 8, 9 and 10 between the
-  low-rise blocks.
+  (residual 0.23 px median); the raid screen is `(p1080 - VIEW_O) * 3.5`. The window snaps to 0.5 px on city_default so the 4k
+  crop starts on a whole pixel; the crop and the map share the same float box, so the grid sits on the pixels. The ground
+  visibility mask comes from the 1080 world positions, scaled 3.5x and blurred, so it is much coarser than the picture.
+- **District:** the low-rise street block south-west of the Solace HQ ring (the set 3 district, cropped tighter). The grid is
+  7 x 7 cells on the city's own 6 BU lot lattice, X0 -195, Z0 -135 (edges at 3 mod 6 BU in world x and z). Cell names a-g along
+  the north-east edge, 1-7 along the north-west edge. The cell diamond is about 145 x 93 px. Open streets: avenue b (world x
+  -189..-183, the whole length), street 1 (north) and streets 6-7 (south), avenue e from row 3; low-rise blocks between them.
+  The window is pinned at the plate's bottom edge (the district sits low on city_default), so the district centre is at about
+  (960, 529) on screen, not quite the intended 470.
+- **Side columns at 0.76:** CREW, rows, core tape and the left foot are drawn at full size on their own layer and shrunk 0.76
+  towards the top-left corner; the work order, the BLACK MARKET sheet, REROLL and SEND IT towards the top-right corner (they
+  stack in the top 760 px). The Evacuate chip shrinks about its own centre. The HUD line stays full size. The centre display
+  between the columns grows from about 890 px to about 1130 px wide.
 
 ## Layers (bible 1.2 + designer rulings 2026-11-15)
 | Raid element | Layer | Drawn as |
 |---|---|---|
-| Placement grid | system | thin cyan lines on the ground, faint the whole raid; hidden behind trees and towers at a 22 % ghost. While something is held, legal cells get a dashed outline and a light fill |
-| Operatives on the map | city (holo) | 2D stand-in for the bible 4.8 R3 class beacon: a pad on the cell, a cone opening up to a cap ring (about 112 px tall), a scanlined emblem disc with the class glyph, in the role colour. A faint dashed reach outline on the ground when relevant (playback) |
-| Operatives in CREW | runner: vinyl sticker | option B: the full roster in full colour; placed ones get "on e8" and a tick in pencil |
+| Placement grid | system | thin cyan lines on the ground, faint the whole raid; hidden behind towers at a 22 % ghost. While something is held, legal cells get a dashed outline and a light fill |
+| Operatives on the map | city (holo) | 2D stand-in for the bible 4.8 R3 class beacon, sized to one cell: a pad on the cell, a cone (about 8.5 BU, 110 px tall) opening to a cap ring about two-thirds of the cell wide, a scanlined emblem disc with the class glyph, in the role colour. A faint dashed reach outline on the ground when relevant (playback) |
+| Operatives in CREW | runner: vinyl sticker | option B: the full roster in full colour; placed ones get "on c2" and a tick in pencil |
 | Corp units | corp icon (bible 4.8 v4) | SHAPE = type: Trooper / Riot / Sniper = plain Solace capsule (Riot with a shield plate, Sniper with a barrel), Bike = capsule + `>>` badge, Heavy = block, Drone = diamond with four rotors and a 2x2 dot glyph, Wrecker = hexagon with a hammer glyph. FILL = Solace teal = health, draining top-down with a white line. RING = dashed teal circle, 1.85x, with status pips clockwise from top right (S slowed, H held, J jammed). Stack badge "x5". A ground disc under the unit drains the same way |
 | Unit status values | pencil | the duration beside the pip ("2", "1") |
 | INCOMING | corp paper under glass | the intercepted work order: Solace letterhead, WORK ORDER ref, a redaction bar, the v39 rows ("ROUND 1 (now) · 8 units", "A Trooper ×5  B Bike ×3"...) with mini v4 icons, a red INTERCEPTED stamp, a paper clip, glass sheen and cyan corners. The Cell's yellow pencil bracket marks the current round |
 | Drag (held operative) | runner sticker | Takeover's model: the sticker trails the pointer (spring lag), lifted with a long shadow, tilted, motion streaks; a faint liner stays in its CREW slot; a yellow pencil arrow to the hovered cell, yellow circle = valid |
-| Barricade, Safehouse, site B2, site core | runner: sticker | on the glass over their cell, larger than set 1 (barricade 0.8, Safehouse 1.0). Barricade hp in pencil beside it |
-| Routes, entries | pencil, red | along the streets between the blocks, A/B/C circles at the district edge |
-| Forecast, kill ticks, notes | pencil | as set 1 (stop bar, "holds f7", "2 leak" arrow, "8 → 6", "+3/+2/+1", hatched reach) |
-| Rows, chips, HUD line, SEND IT, shop sheet, report | unchanged from set 1 | |
+| Barricade, Safehouse, site B2, site core | runner: sticker | on the glass over their cell, sized to about one cell (Safehouse 0.66, barricade 0.56, site 0.66, core 0.56). The barricade is the sticker only; its health is a small pencil value beside it ("6 → 3") |
+| Route cells | system | every cell a route travels: a faint red tint on the ground, two small red chevrons (dark-edged, flat on the ground) pointing the way it travels. The entry cell (where the stack waits, off the district) is tinted stronger with a solid red edge; the end cell (Safehouse pink, site green) is tinted in its sticker colour with a solid edge |
+| Routes, entries | pencil, red | one line through the cell centres, from the waiting stack cell to cell into the end cell's edge (arrowhead); A/B/C circles where it crosses the district edge |
+| Forecast, kill ticks, notes | pencil | "2 leak" arrow, "8 → 6", "+3/+2/+1", hatched reach; no stop bar and no "holds" note (the HUD line says "A holds at b4") |
+| Rows, chips, HUD line, SEND IT, shop sheet, report | unchanged from set 1, side ones at 0.76 | |
 
 ## Plates
 | File | Shows |
 |---|---|
-| `r3_plan.png` | Round 1/4 at rest. KAI e8, VEX g4, MOTH e10 placed (beacons on the city; stickers stay in CREW with pencil cell + tick). Route A comes down avenue f from the north, route B in from the east along street 8 and down avenue i; both end at the Safehouse on h10. Barricade at f7 on route A; Trooper ×5 waits at A, Bike ×3 at B. Pencil: stop bar, "holds f7", wall hp "6 → 3", red "2 leak" arrow into the Safehouse, "8 → 6". HUD: `A holds at f7 · B 2 leak · Core 8 → 6 · 6/8 killed`. |
-| `r3_place.png` | RUNE held, Takeover drag: the sticker trails the pointer below right, the liner in its CREW slot, the yellow arrow to i7, circled. Legal cells lit. Reach hatched on the ground (3x3 round i7); +3 / +2 / +1; B's "2 leak" struck, yellow 0; "safe". HUD: `IF PLACED i7 B 2 leak → 0 leak · Core safe · 8/8 killed`. |
+| `r3_plan.png` | Round 1/4 at rest. KAI c2, VEX e5, MOTH a7 placed (beacons on the city; stickers stay in CREW with pencil cell + tick). Route A comes in from the north-west along street 1 and down avenue b; route B in from the south-east along street 6, then one cell down; both end at the Safehouse on c7. Barricade on b4 on route A, "6 → 3" beside it. Trooper ×5 waits at A, Bike ×3 at B. Pencil: red "2 leak" arrow into the Safehouse, "8 → 6". HUD: `A holds at b4 · B 2 leak · Core 8 → 6 · 6/8 killed`. |
+| `r3_place.png` | RUNE held, Takeover drag: the sticker trails the pointer below right, the liner in its CREW slot, the yellow arrow to e7, circled. Legal cells lit. Reach hatched on the district's cells round e7; +3 / +2 / +1; B's "2 leak" struck, yellow 0; "safe". HUD: `IF PLACED e7 B 2 leak → 0 leak · Core safe · 8/8 killed`. |
 | `r3_shop.png` | BLACK MARKET sheet: SHOTGUN peeled (glossy liner left) and slapped onto RUNE's SHOTGUN; "MERGE ☆+☆ → ☆☆"; credits 7 → 4. |
-| `r3_playback.png` | Tick 3/8. A trooper held at the wall (H pip, pencil 2, −4), a bike slowed (S pip, pencil 1, −3, glide smear), a trooper bursting into teal/white bits; tracers from the KAI and VEX beacons, pencil ✕ tallies; reach outlines; HELD + BOMBARD ×2 word sticker; faint units still to enter; RUNE's beacon on i7; shop locked; SEND IT greyed + RESOLVING; tick bar. |
-| `r3_site.png` | Site raid on B2, round 1/3: three lanes cross at the B2 site sticker on the f8 street crossing (A in from the east along street 8, B down avenue f from the north, C up avenue f from the south edge); the core one cell west (e8) with `8/8`; KAI "B2 crew" on i7; VEX "from C2" on e10 (arrow from off the map, lower left); the "who defends B2" note above left of the district; the Evacuate chip at the top centre; MOTH / RUNE grey "at A1" / "at D4". Core tape `CORE 8 → 7`, pencil "1 leak", "8 → 7". The chip reads exactly "Evacuate (give up B2 without a fight, KAI back to HQ)". |
+| `r3_playback.png` | Tick 3/8. A trooper held at the wall (H pip, pencil 2, −4), a bike slowed (S pip, pencil 1, −3, glide smear), a trooper bursting into teal/white bits; tracers from the KAI and VEX beacons, pencil ✕ tallies; reach outlines; HELD + BOMBARD ×2 word sticker; the wall's hp "6 → 4"; faint units still to enter; RUNE's beacon on e7; shop locked; SEND IT greyed + RESOLVING; tick bar. |
+| `r3_site.png` | Site raid on B2, round 1/3: three lanes meet at the B2 site sticker on the b6 street crossing (A in from the south-east along street 6, B down avenue b from the north, C in from the south-west edge); the core one cell west (a6) with `8/8`; KAI "B2 crew" on e5; VEX "from C2" on a7 (arrow from off the map, lower left); the "who defends B2" note above left of the district; the Evacuate chip at the top centre; MOTH / RUNE grey "at A1" / "at D4". Core tape `CORE 8 → 7`, pencil "1 leak", "8 → 7". The chip reads exactly "Evacuate (give up B2 without a fight, KAI back to HQ)". |
 | `r3_aftermath.png` | Solace AFTER-ACTION REPORT over the dimmed city: the Cell's pencil (circle, 30/34, ticks, "HQ untouched"), a yellow HELD sticker, CLASSIFIED in corp teal; the result panel; CONTINUE; CREW back with kill tallies. |
 | `r3_sheet.jpg` | All six. |
 
 ## Calls I made (not designer rulings)
-- **Raid zoom 2x, from the 4k plate** (designer update: the city_default zoom must not be the default). 2x was the closest
-  zoom with native pixels; the district (grid, both routes, Safehouse) fills the centre and buildings read. A closer zoom would
-  need upscaling; the script supports it (`VIEW_ZOOM`), Lanczos + light unsharp.
-- **District = the street block south-west of the HQ ring** (designer: move it off the plaza). A scan of the whole plate for
-  10 x 10 lattice windows mixing open street cells with low-rise blocks found two street districts: this one, and the low-rise
-  block north of the HQ ring, which sits at the plate's top edge (it would frame with the grid running off the top). This one
-  sits at the bottom-right corner, so the window is pinned at (960, 540), the furthest the 4k plate allows; the grid is placed
-  so it fits between the panels (x about 560..1390) and above the HUD line. It takes in two tower columns (a-b) and two tower
-  rows (1-2) at the north-west edges as the district's edge.
-- **Sticker and pencil spots moved with the layout:** the barricade sticker turned to lie across avenue f; the "holds f7" /
-  "6 → 3" notes left of MOTH's beacon; the "2 leak" note under route B, right of the Safehouse; the HELD + BOMBARD sticker left
-  of the wall; in `r3_site` the who-defends note above left, the Evacuate chip at the top centre (the grid now reaches the HUD
-  line), "8/8" above the core, "8 → 7" left of VEX; the +1 label beside h9 (under the Safehouse sticker otherwise).
-- **Beacons stand on the north side of the routes.** A cone rises about two cells on screen; placed south of a route it covers
-  the units on the route.
+- **Zoom 3.5x** (designer: roughly 3.5-4x). At 4x a 7 x 7 district (1160 px wide) would not fit between the shrunk columns with
+  room for the entry stacks; at 3.5x it is 1010 px wide with the stacks just inside.
+- **Side columns: one uniform scale (0.76)**, not a re-layout. Everything shrinks together towards its corner, so the column
+  layout and the sticker proportions stay as set 3. A rebuild of the work order with bigger type would be the next step (see
+  weak points).
+- **District kept: the SW street block, cropped to 7 x 7.** At 3.5x the camera window is small enough to centre on it (it could
+  not be centred at 2x). It has real streets between low-rise blocks; the plaza is a park and the HQ-north block sits at the
+  plate's top edge. Route A comes in along street 1 and down avenue b (one turn); B along street 6. The layout was re-placed
+  for the 7 x 7 grid: Safehouse c7, barricade b4, KAI c2, VEX e5, MOTH a7, hovered cell e7; site B2 on b6, core a6.
+- **Barricade: the sticker only.** The stop bar and the "holds f7" note are dropped; the HUD line already says "A holds at b4",
+  and the hp is a small pencil value beside the sticker.
+- **Chevrons are drawn over the route pencil** (two per cell), with a dark edge, so the line does not hide them; the tint
+  stays under the city's buildings at a 55 % ghost, the chevrons at 80 %.
+- **Route line ends at the end cell's edge** with its arrowhead pointing into the Safehouse / site cell, so the arrow is not
+  covered by the (now cell-sized) sticker.
+- **Beacons sized to the cell:** cone 8.5 BU (was 15), cap radius 2.8 BU (was 4.9), pad 1.6 BU; the emblem disc stays 42 px.
+- **Pencil moved with the layout:** the leak note under the Safehouse (left of RUNE's reach), "8 → 6" left of it; in `r3_site`
+  "8/8" and "8 → 7" right of and above the core (clear of VEX's cone).
+- **Beacons stand on the north side of the routes.** A cone rises over the cells above it on screen; placed south of a route it
+  covers the units on the route.
 - **Unit icons are drawn over the route pencil and the map stickers** (they are UI icons, "icons far"), so a held or slowed unit
   is never hidden under the barricade or a red line. Beacons stay under the stickers (they are in the city).
-- **The Safehouse sticker is slapped over the route ends**, so routes run into it instead of ending in arrowheads on top of it.
-- **The held sticker trails below right of the pointer** in `r3_place`, not below left (the side it came from). Below left it
-  would cover the Safehouse and the A route; the arrow still runs from the sticker to the cell.
+- **The held sticker trails below right of the pointer** in `r3_place`, at its CREW size (0.86 x 0.76).
 - **Status pips carry a letter** (S / H / J) and the pencil carries the value; the bible gives the pip order, not a glyph set.
 - **No "on slap" motion frame.** The slap → bits → beacon beat is not drawn (stills only).
 - From set 1, still standing: the CLASSIFIED stamp is corp teal (a held raid is never red); the shop locks in playback with
@@ -79,27 +91,29 @@ as the record; it is superseded.
   words (WORK ORDER ref, TARGET, AUTHORISED, DO NOT FORWARD), "BLACK MARKET", credits 12 at the end.
 - **Beacon is a 2D stand-in** (cone, ring, scanlined disc), not the R3 model. Unit icons are a first pass at v4 for Solace;
   the Riot / Sniper / Wrecker variants are my guesses at "plain body" and "verb glyph".
-- **Ground visibility is coarse** (from 1080 world positions scaled 2x), so grid lines fade under trees with soft edges.
+- **Ground visibility is coarse** (from 1080 world positions scaled 3.5x and blurred), so the grid and route tint fade behind
+  buildings with soft, blocky edges.
 - **Stills only;** kill and forecast numbers are not from the sim; pencil and stickers are hand placed (build needs an
   auto-placer); the measured checks (contrast, minimum text size) were not run.
 
 ## Honest weak points
-- **The 4k plate has a slightly different grade** from city_default (it is the albedo pass with lights); under the glass grade it
-  reads fine, but it is not the shipped grade.
-- **The district sits low and right of centre.** The street block is at the 4k plate's bottom-right corner and the window cannot
-  pan further, so the action fills the lower half of the play area; the top third of the centre is towers and the HQ park edge
-  with nothing on it, and the Safehouse, route B and the forecast pencil crowd the HUD line. A plate rendered with more city
-  south and east would fix it.
-- **Streets read weakly under the glass grade.** The routes do follow open street cells between low-rise blocks (checked on the
-  raw 4k), but the darkening and desaturation make the blocks and streets hard to tell apart at a glance.
-- **40 % of the grid is towers** (a-d, 1-2). Those cells are drawn at the ghost alpha and are not placeable; the grid reads
-  lopsided.
-- **Route B is short** (four cells) and enters near the bottom right, next to the B stack and the "2 leak" note.
-- **The space-elevator tether** passes in front of the district's east side (columns h-j); it is part of the plate.
-- **Busy spots:** at the wall in `r3_playback` (held unit, pip, value, −4, kill bits, KAI tally, tracers) and the hovered cell in
-  `r3_place` (hatch, circle, +3, +2, +1 on route B, pointer, arrow head, the struck leak note and the Safehouse all within
-  about 200 px).
-- **Beacon cones overlap stickers and labels** where they rise (MOTH beside KAI at the wall; VEX's cone next to the core in `r3_site`).
+- **The city is upscaled 1.75x past the 4k plate.** Soft edges and enlarged halftone dots; the unsharp keeps edges, not detail.
+  A 7k (or district-cropped) render of the same frame would fix it.
+- **Rules text in the side columns misses the 16 px cap-height aim.** Measured from the font sizes: the HUD line is about 21 px
+  cap (full size); the core tape title, the rows and the chips about 13-15 px; the work order's round heads about 11 px; its unit
+  rows ("Trooper ×5") about 9 px, the smallest rules text on screen. Uniform scaling cannot reach the aim for the memo; it needs
+  re-laying out (fewer groups per line, bigger type) or a wider right column.
+- **The district sits a little low** (centre about 529 on screen, aim 470): the window is pinned at the plate's bottom edge.
+- **The lit zigzag road under the district** (bottom of the play area) is bright and busy behind route B, the leak notes and
+  the entry stacks; it is part of the plate.
+- **The space-elevator tether** crosses in front of the district's east side (columns d-g); it is part of the plate.
+- **Street blocks in front of avenue b** hide parts of its cells from this camera (the route tint drops to the ghost there);
+  the chevrons and the line carry the route through.
+- **18 of 49 cells are blocks or hidden behind them** (under 60 % open ground): the low-rise blocks between the streets and
+  the west edge (a3-a6). They are not placeable; the grid shows them at the ghost alpha.
+- **Busy spots:** the hovered cell in `r3_place` (hatch, circle, +3, +2, the route B line and chevrons through the hatch, pointer,
+  arrow head) and the wall in `r3_playback` (held unit, pip, value, −4, kill bits, KAI's cone and tally, tracers).
+- **The B entry stack sits at the bottom right**, close to the HUD line, and the C stack in `r3_site` close to the left column.
 - **The dashed unit ring is faint** on the dark streets; the fill and pips carry the read.
 
 ## Designer rulings, 2026-11-15 (on this set)
@@ -117,10 +131,10 @@ These replace the open questions that were here. The plates above predate them a
    without a fight, KAI back to HQ)" and ends the raid at once (site taken, no fight, Heat as an overrun raid). `r3_site.png`
    is wrong on both: its core reads 6 → 5 and its chip text "B2 to the corp, crew walks" is invented.
 
-(Set 2 applies all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
+(Sets 2-4 apply all six; the sentences above about "the plates above" and `r3_site.png` refer to the first set, now in `grid_v1/`.)
 
 ## Source
-`src/raid_v3_city.py` (set 2 plates + sheet) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
+`src/raid_v3_city.py` (set 4 plates + sheet) and `src/city_geo.py` (camera fit, ground height and visibility), copied from
 `D:/rc_scratch/raid_v3/src/`. They import `raid_kit.py`, `raid_v3.py` (report paper) and the Takeover v3 scripts read-only; the
 first set's `raid_v3.py` is unchanged and still renders `grid_v1`.
 - **Run:** `python raid_v3_city.py [plan place shop playback site aftermath sheet]`.
