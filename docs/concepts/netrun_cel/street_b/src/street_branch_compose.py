@@ -21,7 +21,7 @@ def callout(img, x, y, letter, tx=None, ty=None):
     return img
 
 
-def mini_graph(img, x0, y0, w, h, N, depth, lanes, cur, hover, opts, reach):
+def mini_graph(img, x0, y0, w, h, N, depth, lanes, cur, hover, opts, reach, variant="A"):
     """The whole street of the sample (8 layers x 4 stories): the frame's window bracketed, the lanes coloured."""
     d = ImageDraw.Draw(img)
     lx = lambda l: x0 + 18 + (l - 1) * (w - 36) / (depth - 1)
@@ -39,7 +39,8 @@ def mini_graph(img, x0, y0, w, h, N, depth, lanes, cur, hover, opts, reach):
             m = N[j]
             p0, p1 = (lx(n["layer"]), ry(n["row"])), (lx(m["layer"]), ry(m["row"]))
             if i in hi and j in hi and hi.index(j) == hi.index(i) + 1:
-                d.line([p0, p1], fill=B.PICKB + (255,), width=4)
+                pink = variant == "A" or i == cur
+                d.line([p0, p1], fill=(B.PICKB if pink else B.WHITE) + (255,), width=4 if pink else 2)
             elif i in lo and j in lo and lo.index(j) == lo.index(i) + 1:
                 d.line([p0, p1], fill=(255, 190, 120, 200), width=2)
             else:
@@ -58,9 +59,29 @@ def mini_graph(img, x0, y0, w, h, N, depth, lanes, cur, hover, opts, reach):
     return img
 
 
+VARIANTS = {
+    "A": ("street_branch_A_band.png", "PICK B VARIANT A: BAND",
+          "LANE 2 (hovered): TERMINAL -> ROUTER, climbs a floor a layer. Pick B band (pink 4 px edge, 22 % fill) fork to rejoin.",
+          "REJOIN: both lanes end at the final SERVER RACK (top floor, 'roof relay'). The pick B beam rises from it."),
+    "B": ("street_branch_B_next.png", "PICK B VARIANT B: NEXT ROOM ONLY",
+          "LANE 2 (hovered): pick B (pink 4 px edge, 22 % fill, beam) on the next room only; the rest is plain 'ahead' (white dashes).",
+          "REJOIN: both lanes end at the final SERVER RACK (top floor, 'roof relay'), shown as plain 'ahead'."),
+}
+
+
 def run():
-    frame, N, lanes, win, opts, reach = SB.main()
-    frame.convert("RGB").save(B.SCR + "/street_branch_frame.png")
+    for v in ("A", "B"):
+        run_one(v)
+    import os
+    old = B.OUTDIR + "/street_branch.png"
+    if os.path.exists(old):
+        os.remove(old)
+
+
+def run_one(variant):
+    fname, title, note_b, note_d = VARIANTS[variant]
+    frame, N, lanes, win, opts, reach = SB.main(variant)
+    frame.convert("RGB").save(B.SCR + "/street_branch_frame_%s.png" % variant)
     img = frame.copy()
     bx = lambda i: SB.box_of(N[i])
     # plate notes on the frame
@@ -82,16 +103,16 @@ def run():
     d.line([(0, B.H), (B.W, B.H)], fill=(60, 60, 80, 255), width=2)
     y0 = B.H + 18
     t = B.font_anton(30)
-    B.K.text(out, (40, y0 + 14), "CAMPAIGN B STREET: FORK, TWO LANES, REJOIN", t, (240, 240, 250), "lm", 0.5)
+    B.K.text(out, (40, y0 + 14), "CAMPAIGN B STREET: FORK, TWO LANES, REJOIN  //  " + title, t, (240, 240, 250), "lm", 0.5)
     B.K.text(out, (40, y0 + 44), "Real data: port-campaign-b street_sample seed 2 tier 2, layers 5-8 of 8. Rows are stories (ground .. top floor),",
              B.font_mono(15), NOTE, "lm", 0)
     B.K.text(out, (40, y0 + 64), "so a lane is a run of rooms on floors. Staged on golden_plates/street_overview.png; rooms from the locked route view.",
              B.font_mono(15), NOTE, "lm", 0)
     notes = [
-        ("A", "FORK. You are at node 52 (ELITE, 2nd floor, lime). It links to two rooms: the player picks one (go:NODE)."),
-        ("B", "LANE 2 (hovered): TERMINAL -> ROUTER, climbs a floor a layer. Round 7b pick B: pink 4 px edge, 22 % fill, beam."),
+        ("A", "FORK. You are at node 52 (ELITE ROUTER, 2nd floor, lime). It links to two rooms: the player picks one (go:NODE)."),
+        ("B", note_b),
         ("C", "LANE 1: ROUTER -> ROUTER on the ground floor. Dimmed (rooms x0.6, wax 55 %), still orange: still a choice."),
-        ("D", "REJOIN: both lanes end at the final SERVER RACK (top floor, 'roof relay'). The beam rises from it."),
+        ("D", note_d),
         ("E", "CUT OFF (grey): rooms of these layers that 52 cannot reach. Whole graph stays drawn (bible 4.6)."),
     ]
     yy = y0 + 96
@@ -101,9 +122,9 @@ def run():
         yy += 28
     import json
     s = json.load(open(B.SCR + "/samples.json"))[SB.SAMPLE]
-    out = mini_graph(out, 1340, B.H + 34, 540, 172, N, s["depth"], lanes, SB.CUR, SB.HOVER, opts, reach)
-    out.convert("RGB").save(B.OUTDIR + "/street_branch.png")
-    print("saved", B.OUTDIR + "/street_branch.png")
+    out = mini_graph(out, 1340, B.H + 34, 540, 172, N, s["depth"], lanes, SB.CUR, SB.HOVER, opts, reach, variant)
+    out.convert("RGB").save(B.OUTDIR + "/" + fname)
+    print("saved", B.OUTDIR + "/" + fname)
 
 
 if __name__ == "__main__":

@@ -54,7 +54,7 @@ PICKB_LINE = 4
 # orange, the proposal splits them: elite red-orange, rack amber).
 KINDS = {
     "fight": dict(word="ROUTER", locked="router", shape="circle", col=(40, 36, 52), ring=(92, 225, 255), cell="router"),
-    "elite": dict(word="ELITE", locked="elite", shape="burst", col=(120, 40, 14), ring=(255, 96, 40), cell="elite"),
+    "elite": dict(word="ELITE ROUTER", locked="elite", shape="burst", col=(120, 40, 14), ring=(255, 96, 40), cell="elite"),
     "event": dict(word="TERMINAL", locked="terminal", shape="rsq", col=(14, 60, 36), ring=(61, 255, 139), cell="terminal"),
     "shop": dict(word="MAINFRAME", locked="modem", shape="tag", col=(20, 40, 96), ring=(90, 150, 255), cell="shop"),
     "rack": dict(word="SERVER RACK", locked="rack", shape="tall", col=(66, 44, 8), ring=(255, 196, 60), cell="rack"),

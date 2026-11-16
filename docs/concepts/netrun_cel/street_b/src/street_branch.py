@@ -40,7 +40,10 @@ def stk_xy(n):
     return (x0 + 2, (y0 + y1) / 2)
 
 
-def main():
+def main(variant="A"):
+    """variant A (band): pick B from the fork through the hovered lane to the rejoin, beam from the rejoin.
+    variant B (next only): pick B on the hovered next room only, beam from that room; the rest of the lane is plain
+    'ahead' (white dashes, full rooms)."""
     N, s = load()
     win = {i: n for i, n in N.items() if FIRST <= n["layer"] <= LAST}
     opts = N[CUR]["links"]                                    # [61, 62]
@@ -77,20 +80,34 @@ def main():
     for a, b in zip(pts[1:], pts[2:]):
         band_pts += B.link_path(a, b)[1:]
     band_pts.append((pts[-1][0] + 30, pts[-1][1]))
-    mask = B.lane_mask(img.size, band_pts, RH + 30)
+    if variant == "A":
+        mask = B.lane_mask(img.size, band_pts, RH + 30)
+    else:
+        # B: a pick B pad round the hovered next room only (a rounded block one slab wider than the room)
+        hb = box_of(N[HOVER])
+        cx, cy = (hb[0] + hb[2]) / 2, (hb[1] + hb[3]) / 2
+        # a rounded pad 14 px proud of the room's cut edge sideways, 8 px up and down (the slab gap to the rooms
+        # stacked above / below is 16 px, so the pink edge stays visible between them)
+        mask = Image.new("L", img.size, 0)
+        ImageDraw.Draw(mask).rounded_rectangle([hb[0] - 34, hb[1] - 16, hb[2] + 16, hb[3] + 12], radius=10, fill=255)
     img = B.grade(img, mask, k_out=0.86, desat_out=0.12)
 
     # rooms: every node of the window is a real room (whole graph shown, bible 4.6)
     lo_set = set(lane_lo[1:-1]) - set(lane_hi)
-    # the fill sits on the facade band (as it sits on the road lots in the city band); the rooms stay clear
+    # the fill sits on the facade (as it sits on the road lots in the city band); the rooms stay clear
     img = B.pick_b(img, mask)
+    if variant == "B":
+        # beam from the hovered room, drawn before the rooms so the rooms stacked above occlude it
+        hb = box_of(N[HOVER])
+        img = B.beam(img, (hb[0] + hb[2]) / 2, 0, hb[1] - 8, k=3.0)
     for i, n in sorted(win.items()):
         st = state(i)
         mode = "grey" if st == "grey" else ("dim" if i in lo_set else "full")
         img = B.room(img, n["type"], box_of(n), mode)
-    # beam (pick B beam_k 3.0) from the lane's end: the final SERVER RACK on the top floor, rising to the sky
-    end = box_of(N[lane_hi[-1]])
-    img = B.beam(img, (end[0] + end[2]) / 2, 0, end[1] - 8, k=3.0)
+    if variant == "A":
+        # beam (pick B beam_k 3.0) from the lane's end: the final SERVER RACK on the top floor, rising to the sky
+        end = box_of(N[lane_hi[-1]])
+        img = B.beam(img, (end[0] + end[2]) / 2, 0, end[1] - 8, k=3.0)
 
     # room frames in the state colour (route view: the room's cut edge carries the state)
     for i, n in win.items():
@@ -122,7 +139,10 @@ def main():
                 grey_paths.append(p)
     img = B.wax(img, grey_paths, B.GREY, 4.0, alpha=0.38, seed=504, clear=clear)
     img = B.wax(img, ahead_lo, B.WHITE, 5.0, alpha=0.55, dash=(14.0, 9.0), seed=503, clear=clear)
-    img = B.wax(img, ahead_hi, B.WHITE, 5.6, alpha=1.0, seed=505, clear=clear)
+    if variant == "A":
+        img = B.wax(img, ahead_hi, B.WHITE, 5.6, alpha=1.0, seed=505, clear=clear)
+    else:
+        img = B.wax(img, ahead_hi, B.WHITE, 5.2, alpha=1.0, dash=(14.0, 9.0), seed=505, clear=clear)
     # walked: in from layer 4 (node 42 r2 rack, off frame left) to the current node
     cxy = stk_xy(N[CUR])
     walked = B.link_path((-20, ROW0_TOP - PITCH * 2 + RH / 2), cxy, bend=0.7)

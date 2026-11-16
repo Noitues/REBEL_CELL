@@ -14,12 +14,16 @@ def fit(im, w):
 
 
 def main():
-    sb = Image.open(B.OUTDIR + "/street_branch.png").convert("RGB")
+    sa = Image.open(B.OUTDIR + "/street_branch_A_band.png").convert("RGB")
+    sbn = Image.open(B.OUTDIR + "/street_branch_B_next.png").convert("RGB")
     nk = Image.open(B.OUTDIR + "/node_kinds.png").convert("RGB")
     gold = Image.open(B.GOLDEN).convert("RGB")
     r7 = Image.open(B.CONC + "/netrun_cel/zoom_rules/round7b/crop_sheet.png").convert("RGB").crop((1100, 345, 1640, 690))
     aaa = Image.open(B.CONC + "/route_map_graph/side_view/v3_aaa/r3/AAA2r3.png").convert("RGB")
-    left = fit(sb, 1560)
+    la, lb = fit(sa, 1560), fit(sbn, 1560)
+    left = Image.new("RGB", (1560, la.height + 20 + lb.height), (12, 10, 20))
+    left.paste(la, (0, 0))
+    left.paste(lb, (0, la.height + 20))
     rw = SW - left.width - 60
     refs = [(fit(gold, rw), "approved: golden_plates/street_overview.png (base of every frame)"),
             (fit(r7, rw), "approved: round 7b PICK candB (pink edge 4 px, fill 0.22, beam_k 3)"),
@@ -28,7 +32,7 @@ def main():
     H = 90 + top_h + 40 + nk.height + 30
     out = Image.new("RGB", (SW, H), (12, 10, 20))
     o = out.convert("RGBA")
-    B.K.text(o, (30, 45), "REBEL_CELL  //  CAMPAIGN B NETRUN STREET: BRANCHES + SIX NODE KINDS  (B-096, concept plates, PIL)",
+    B.K.text(o, (30, 45), "REBEL_CELL  //  CAMPAIGN B NETRUN STREET: BRANCHES (WEB AS GENERATED) + SIX NODE KINDS  (B-096 / B-098, concept plates, PIL; pick B variants A band, B next only)",
              B.font_anton(34), (240, 240, 250), "lm", 0.4)
     o.paste(left, (20, 90))
     y = 90
