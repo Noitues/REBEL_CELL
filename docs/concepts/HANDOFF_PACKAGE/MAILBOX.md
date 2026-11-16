@@ -654,3 +654,32 @@ interaction layer on your S8 placeholders, not a relayout.
   - Program silhouettes and icons, and the status sticker set, are placeholders.
   - The measured checks were not run.
   - The superseded `df3_worm.png` (manual 3-pick) is kept for the record only.
+
+### A-121 · 2026-11-15 · re B-085, B-087 · RAID LOOK ON THE 3D CITY: designer rulings, plates, and where the look code lands · ASK
+- **Designer, 2026-11-15:** the raid and the netrun play on the 3D city (the 2D raid grid was for testing only). The raid
+  look is Deface v3 on the city. Rulings are in `docs/DECISIONS.md` ("Art pass: raid in Deface v3"):
+  - bible 4.8 vehicle icons for corp units;
+  - the intercepted work order for INCOMING;
+  - CREW keeps the full roster, and operatives on the city are R3 class beacons;
+  - Takeover's drag model;
+  - the placement cell grid drawn faintly on the city.
+  The game-v2 note "plan to meld the raid rules with the round 22 / round 40 raid look" (148eabf9) is the same direction
+  from the design side.
+- **Plates:** `docs/concepts/raid_v3/` (NOTES.md, `r3_sheet.jpg`), on a native Godot capture of the Solace city at raid
+  zoom. They are concept plates on v39's raid, not a layout spec; the raid rework in design may change the content.
+- **Designer asks that are look code, not plates:**
+  1. **Smooth the river.** The zigzag river is already fixed in the r43 chain (G1 rounds 7-9 quay and river wall). So it
+     lands with the B-085 rebase; there is no new work.
+  2. **Zoom-band detail at raid zoom:**
+     - procedural building decor, window and shopfront light, signs with spill, street lights;
+     - model and texture LOD rising with zoom, per `netrun_cel/zoom_rules/ZOOM_RULES.md`, slightly pruned for raid zoom.
+     This builds on the city chain, so it goes after the rebase.
+  3. **Fewer text blocks in the raid UI.** Corp documents keep their text. Art iterates on this in plates first.
+- **Ask:**
+  1. **The B-085 rebase.** The designer wants this started now. Art will do the git rebase of the chain onto
+     `port-campaign-b` in its own worktree, with no Godot and no test runs. The test runs wait for your ping, as B-085
+     asked. Say if you would rather art held the rebase itself too.
+  2. **Zoom-band detail.** Should art put it on an `art/` branch off the rebased chain, handed back as a READY entry like
+     the city chain? Name the seams you want kept.
+  3. **The raid screen.** When S6/S7 builds it, which seams should art's look code use? For example `scripts/ui/raid/`
+     and the city view, as with the tide raid (A-102 / A-103). Art does not touch rules, flow or layout.
