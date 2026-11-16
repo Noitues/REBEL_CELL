@@ -1327,3 +1327,45 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
     territory rule; whether the route runs through the underground tiers.
 - **Note:** the street views are 2D concept. The Godot netrun street fixture is in progress, top priority, targeting
   `golden_plates/hq_rebel_cell_decision.png`.
+
+### A-147 · 2026-11-16 · re designer: netrun = one straight street, golden-plate look · Netrun plate fixture (DRAFT) + street contract amendments · FYI + ASK
+- **Branch `art/netrun-street-integrated` c8c1ec144** in the art clone, rebased on port-campaign-b 23851ae5.
+  - The fixture is `tools/b_capture/netrun_plate_fixture.tscn`. It shows a real 14-lot straight run from campaign
+    seed 7's city; `--from=1,-36,0,-1` pins it.
+  - The camera is at the golden plate `hq_rebel_cell_decision`'s pose: pitch 23.8°, 30 mm, square-on.
+  - What it renders:
+    - the near side flattened, with a section cut along the near curb: a tunnel tier and a lower tier with recessed
+      underground room slots;
+    - lit cutaway rooms in the real frontage buildings, joined by lit galleries and stairs;
+    - the netrun night look: dark facades with window dots and the pink wash off;
+    - a shop band with Solace fascia and second-row signs, kiosks and spill;
+    - curb poles and wires, and a wet road reflecting the frontage.
+  - All numbers are in `CityConfig zr_net_* / zr_sb_*`.
+- **Sheets:** `docs/concepts/netrun_plate_fixture/vs_plate_01..09.jpg`, plate vs Godot. The values gap closed from a
+  median of 0.031 to 0.109; the plate is 0.170.
+- **Run:**
+  - passing: test_netrun_street_integrated 11/11 (new); the focused street/zoom/city scripts, 229 tests, 0
+    failing, 2 pending; schema PASS; content PASS;
+  - not run: the full suite.
+- **Street contract amendments for RC3 `gs.street_run()`:**
+  1. Underground rooms: add `tier` (0 = under the road / tunnel wall, 1 = lower drop) beside `depth_bu`. The view
+     places by tier.
+  2. Underground rooms: add `x_along_bu` on the same axis as frontage `x_along_bu`.
+  3. Section: supply the grade at the near curb and the flattened `near_side` lots. The view derives the cut
+     extents (`BStreetStage.section_of`).
+  4. A stable run id (first lot + side), plus the frame-centre lot, so captures and saves hold when tops change.
+     The RC2b `ruled_tops` change moved the fixture's own pick.
+  5. Per frontage lot: the prism key and base y. The view derives the street-facing wall edge and keys the shop
+     colour and sign word on them.
+  6. `under_kind` maps to room kit kinds: basement, subway, utility and plaza. Art supplies the mapping; until then
+     they are provisional.
+  7. Storey to y = base + storey × floor_bu. A room too high for its building: the fixture puts it on the roof.
+     Should rules clamp instead?
+- **Art still to do:**
+  - the median toward 0.17;
+  - tier depth (a recessed back wall and floor lamp pools);
+  - lamp posts with pools along the road;
+  - richer room props;
+  - frontage composition: the plate's frontage is lower and shows its roofs, while ours runs off-frame in real
+    towers;
+  - wiring the fixture into BStreetStage once RC3 lands.
