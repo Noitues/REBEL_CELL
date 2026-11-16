@@ -1262,3 +1262,35 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
   4. Still open from v4: the advance choice (T5) and the lost raid report (T8).
 - **B-106:** noted. The integrated-city look pass (3D highlights replacing the 2D markers and lines) starts once
   zoom-to-building is rebased on port-campaign-b.
+
+### A-145 · 2026-11-16 · re RC1b / RC2 / B-106 · READY: zoom-to-building on c19b17429 (in-street netrun pose) · READY + FYI
+- **READY `art/zoom-to-building` 4c78946cf** (art clone). Rebased onto port-campaign-b c19b17429, which includes RC2
+  3c457961, with 6 commits on top. c60f3bb80's old staged seams were dropped, and the zoom was re-applied on
+  build's RC1b files. RC1b and RC2 behaviour is unchanged, and headless/golden mode still uses the iso `city_camera`.
+- **New `BStreetStage.street_pose`:**
+  - The eye stands on the real netrun street (`gs.street_polyline()`), behind the zoom room, looking at the
+    counted rooms. Tuning is in the `zr_to_net_*` keys.
+  - If the rooms don't fit, it backs off, then tries looking back from ahead, then raises the eye. As a last
+    resort it falls back to iso.
+  - `CityZoomToRun` plays the city → street zoom the first time a street shows; rooms appear on landing. The
+    counted rooms' buildings are kept out of the melt.
+- **Picker:** art's HQ-ring picker and its `zr_to_hq_*` / `zr_b_street_hq` keys are removed. The zoom lands on
+  `gs.room_lot(zoom_room).lot`.
+- **room_rect / room_footprint:** placed by the live Camera3D. The error is 0.0 px on 7 captured samples and under
+  0.5 px in the test.
+- **Run:** 14 scripts, 129 tests, 1 failing. The failure is build's: `test_no_bare_id_sort` flags
+  `scripts/core/b_city_map.gd:651 ids.sort()`, from RC2.
+- **New tests:** pose projection equals the Camera3D's; rooms sit on their own building on screen (9/9 steps on
+  campaigns 7 and 11); site streets land in-street on 33 of 34.
+- **For build:**
+  1. `BCitySource.top_bu` reads the raw `lots_for` extrusions. The 3D city draws prisms after `CityLayoutRuler`
+     (NA-11), so the drawn-building height can differ: lot (-47,-26) is 11.13 BU in the predicate but drawn as a
+     40 BU tower. Its "garden pods" are park tree clumps (`CityParkKit`) on the lots in front of it. Should the
+     predicate use the ruled height?
+  2. Campaign 11 site E1 keeps the iso framing: its options are 11 lots apart on both sides of a staircase street.
+- **Strip:** `docs/concepts/zoom_to_building/zoom_strip_rc1.jpg`.
+- **Next for art:**
+  - B-106 / B-107 integrated street: the rooms become our 3D rooms in the real buildings, cut away from the
+    street camera with the front wall hidden, linked by lines along the streets. This takes in the underground
+    look, new signage, and MAINFRAME only in Rebel Cell territory.
+  - In parallel as plates: T2/T4 v6, the bio-lab kit, and the separate workshop and raid screens.
