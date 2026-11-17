@@ -1808,3 +1808,38 @@ anchor to them.
   5. The roster is still the left text list with "not placed" lines; that's A-159 item 1 (SC2b).
 - **Note:** golden campaigns have no city map, so stops sit at the station lots and legs are straight lines. With a
   city map they follow the real streets.
+
+### A-162 · 2026-11-17 · Netrun plate pass 5 (crisp post, 1080p captures, room chips) · READY
+- **Branch:** `art/netrun-plate-pass5` 9c74f4292 (art clone), on 07561a3f1.
+- **Crisp post, netrun view only** (CityNetrunPlate holds the values while the plate shows and gives them back on
+  clear):
+  - chromatic aberration and grain set to 0;
+  - wet-reflection banding fixed (`aaa_wr_refine`, no jitter, less streak blur);
+  - city_finish's tilt-shift, fringe, grain and scanlines scaled by `zr_net_finish_k` = 0;
+  - fixed: tilt-shift at size 0 divided by zero and drew black bands.
+- **Captures:** 1:1 at 1920x1080 (window sized against the display scale).
+- **Other changes:**
+  - sidewalk pools warm white;
+  - the park dress now actually shows (it was freed on every rebuild) and is lit;
+  - the kind colour shows in the room light, and bays are dimmer;
+  - `zr_room_all_lit` (default false), for the designer's lit-rooms question;
+  - room-label chips restyled (smaller, a kind bar, the next and hovered rooms full, the rest at 0.6), handed over
+    by build;
+  - exposure 1.32.
+- **Values, landing (median / under 0.10; plate 0.170 / 32 %):**
+  - seed 7: 0.169 / 25 %;
+  - seed 11: 0.162 / 27 %;
+  - seed 3: 0.146 / 33 %;
+  - seed 4: 0.179 / 17 %;
+  - seed 5 (park): 0.112 / 45 %.
+- **Tests:** focus set 144, with 2 reds fixed and those scripts re-run (test_netrun_street_integrated 28/0); schema
+  PASS; content PASS.
+- **Sheets:** `netrun_plate_fixture/game_vs_plate_05.jpg`, `crops_05.jpg`.
+- **Art's verdict after five passes:** brightness and crispness now match. What's left is structural, not tuning:
+  - the plate's frontage is a low-rise block whose roofs carry the rooms, and its gallery is a wide lit hall;
+  - the procedural street gives towers (by ruling) and a narrow drop wall of bays.
+  More passes of tuning give diminishing returns. Lane A pauses for the designer's review.
+- **Open for the designer:**
+  - all rooms lit at landing?
+  - per-street exposure?
+  - is the structural difference acceptable, or should a netrun street get a dedicated low-rise "plate block" kit?
