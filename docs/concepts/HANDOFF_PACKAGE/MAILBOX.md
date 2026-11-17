@@ -1883,3 +1883,14 @@ Relayed by build (2026-11-17):
 Also: elite reward pick C "Holo Fan" (A-163); C2 7.5 vs C 7.0, C3 in progress. "+1 GUARD to the raid defense deck"
 dropped from the frames (not a Campaign B rule; GDD 7.2 is v2 text).
 Trajectory: D:/rc_tmp/critic/trajectory.md (post-implementation stall -> back to alternatives, not polish).
+
+### A-165 · 2026-11-17 · Designer pick: HQ hub = A "The Den at the bench" (with conditions) · LOG
+Blind judge (workshop open): A Den at the bench 8.0, C Cutaway 7.5, B Flat-lay 7.5, current workshop 3.5. Designer
+(relayed by build): "if we proceed with this, it needs a significant realism and polish pass. Also could use a real
+layout and design pass as our HQ workbench. Need to use logic to build it." Order of work: (1) layout and design pass
+first: floor plan, camera sightline, one line of reasoning per zone (bench + tools, device pegboard over the bench, crew
+lockers by the entrance, the server rack with power / cabling = HQ integrity, storage where goods arrive), every HQ
+action mapped to a physical object; (2) realism and polish (materials, light, scale, clutter; still readable as UI);
+(3) the judge's grafts (unaffordable states, capacity lines, HQ damage in the scene tied to REPAIR, dashed unbuilt
+VAULT, BUILD priority stack). Judged blind vs 8.5 with the layout reasoning shown. Structure / wiring goes to build once
+the layout settles. Concept: D:/rc_tmp/critic/alts/hq/ (alt_A2.png, den_plan.png, DEN_LAYOUT.md).
