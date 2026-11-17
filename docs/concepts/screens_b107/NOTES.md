@@ -325,3 +325,116 @@ All three share the same frame:
 - **Heat after a lost raid:** build said "unchanged". The vertical slice, which owns the rule, says the overrun Heat
   vent applies. Art follows the vertical slice: "Heat drops".
 - **Recruit cost and the SCHEM currency:** build will answer from the port's data.
+
+---
+
+## Plates added 2026-11-17
+
+Drawn by `scripts/reward_loss.py` (`python scripts/reward_loss.py [a b c d_mid d_final loss stop]`) and, for the mark, `scripts/raid_world.py marks`. Same kit, 1920 x 1080, PIL only. `sheet.jpg` has a new row for them.
+
+### Netrun room reward (vertical slice v49-1): `netrun_reward_a.png` to `netrun_reward_d_final.png`
+
+All five share one frame:
+
+- the netrun street (`transitions/v6/plates/netrun_street_won.png`) dimmed to about 44 % and softened;
+- the run HUD: runner, run health, credits (`unbanked` amber / `BANKED` lime), Heat;
+- a crumb: site, tier, node, layer;
+- the result sticker;
+- lime terminal glass panels (T4 W5);
+- the DECK pile bottom left, with a pencil arrow from the hovered card ("+1 = n");
+- CONTINUE (Space).
+
+Cards are netrun deck cards in this set's vinyl: RAM disc, name, type-colour art field with a glyph, type band (HACK pink, SYSTEM cyan, GUARD green, POWER gold with a gold keyline), effect text, rarity pips. Implants are die-cut chip tiles with the slices they fit.
+
+Shared states:
+
+- **hover / selected:** the card lifts about 22 px, sits straight and gets a lime glow and keyline;
+- **picked:** it flies to the deck (T4 W6);
+- **SKIP:** keeps the deck as it is;
+- the card pick and the implant pick are separate, and each can be skipped.
+
+| Plate | Node | On it |
+|---|---|---|
+| `netrun_reward_a.png` | ROUTER win | ROUTER CLEARED; card pick 1 of 3 (Static Shock, Tailspin, Sanitize) or SKIP. **Over the asset cap** (amber panel): a 12-segment wheel ring with segments held up to the cap in lime and above it in amber. Here 3 above give "+6 cr, 2 cr each, max 6" and the tag "unbanked until a rack". When nothing is over the cap the panel is hidden. A pencil note says what a ROUTER never pays: no flat credits, no run health, no Heat. |
+| `netrun_reward_b.png` | ELITE win | ELITE DOWN plus a HEAT +1 sticker (36 > 37). A richer card pick 1 of 3 (Leech Worm, the POWER card Backdoor, Cold Snap). IMPLANT pick 1 of 2 (Overvolt, Siphon selected), with its own SKIP. |
+| `netrun_reward_c.png` | TERMINAL (no fight) | The DISPATCH line, then CHOOSE ONE of three glass panels: (1) the implant shown (Tracer); (2) upgrade the 2 listed cards (Static Shock > Static Shock+ 4 > 6, Firewall > Firewall+ 6 > 9), drawn hovered with lime glass; (3) heal 5 run health (31 > 36, capped at the max). TAKE IT confirms. |
+| `netrun_reward_d_mid.png` | SERVER RACK, mid (layer 4) | RACK TAKEN; the ELITE rewards (card pick with a POWER card, Root Kit, and implant pick 1 of 2); a BANKED stamp with the banked amounts, "credits and raid assets safe"; HEAL 6 (24 > 30). The HUD credits read BANKED. |
+| `netrun_reward_d_final.png` | SERVER RACK, final (layer 7) | SITE CLAIMED; HEAT +8 ("+3 more on a tier 3 site"); card pick 1 of 3; implant pick 1 of 2; BANKED. A paper variant note: the first tier 3 site's pick is 3 POWER cards (three minis); a tier 3 site may offer a UNIQUE card (a mini with a UNIQUE sticker). |
+
+Not drawn, by rule: MAINFRAME is a shop, not a reward. BLOCK SERVER is HQ-only.
+
+Card and implant text is the real `content/cards` and `content/firmware` text. The four POWER cards (Backdoor, Root Kit, Dead Man Switch, Mirror Shard) are art placeholders, because no POWER card exists in content yet.
+
+### Campaign loss: `loss_printout.png`
+
+- **T11 dossier, slot B composition:** the manila folder on the dimmed, teal-tinted raid city.
+- **Left page:**
+  - the T11 survey photo, every node crossed (cropped from `solace_endscreens/v2/lose_B.png`), taped;
+  - FILED stamp;
+  - SAMPLE LOG: the crew; lost runners struck through, DECEASED run n;
+  - a post-it.
+- **Right page:** the Solace memorandum:
+  - TO / FROM / RE;
+  - **CAMPAIGN SUMMARY:** days active, sites claimed, sites lost, runners lost, raids held, raids lost, final Heat, HQ integrity 0 / 20; losses in red;
+  - the Heat line;
+  - the **TARGET ACQUIRED** corp ink stamp (the same stamp as `raid_f_result_lost.png`);
+  - "no appeal is offered", the signature.
+- **Footer:** MAIN MENU and NEW CAMPAIGN.
+- **Variant panel, right:** a runner lost on a netrun (the T4 L5 trace printout, not the campaign end).
+  - **RUNNER LOST** shows:
+    - the runner FLATLINED, gone for good;
+    - lost with the runner: the deck (19 cards), unbanked credits, unbanked raid assets;
+    - HEAT +12 +2 (tier 2) = +14;
+    - "banked credits and assets: safe at HQ";
+    - TRACE BURNED;
+    - GRID VIEW.
+  - **SAFETY NET USED / RUNNER EXTRACTED:**
+    - the runner lives (back to HQ);
+    - deck kept;
+    - unbanked credits and raid assets lost;
+    - the same Heat;
+    - safety net 1 > 0 left;
+    - same GRID VIEW footer.
+
+### Stop banner: `stop_banner.png`
+
+The raid stop banner at 1:1, drawn by `raid_world.stop_banner` where it lives (top centre on the city) and cropped. Each state is labelled with the plates it appears on:
+
+| State | Banner | Seen on |
+|---|---|---|
+| STOP REACHED | `STOP 1/3 [D4] > A3 > HQ` | raid_a, b, c |
+| HELD | `[D4 lime] > A3 > HQ` | raid_f_result_held |
+| FELL | `STOP 2/3 [D4 struck] > [A3] > HQ` | raid_d |
+| HQ STOP | `STOP 3/3 [D4 struck] > [A3 struck] > [HQ]` | raid_e |
+
+It also shows the chip legend (cur / next / end / fell / held).
+
+### Raid mark: REPLACE SUPPORT (raid rule v50), on `raid/raid_marks.png`
+
+The rule: a defender's full-strength weapon may dock on a slot held by a supporter's weapon, and the supporter's weapon pops back to its owner. The new tile (bottom right) shows two states at 1:1 on slot c3, which is one of NYX's supporter slots and also one of MAKO's slots at D4:
+
+- **HELD + HOVER:**
+  - MAKO's RAIL is held (lifted);
+  - the slot is lit amber with an ink edge;
+  - the slot reads **REPLACE SUPPORT** (amber chip);
+  - the hover pencil ring;
+  - a dashed amber pop-back preview arrow from NYX's docked SMG to NYX's post.
+  - While a defender weapon is held, every supporter-held slot it may take reads REPLACE SUPPORT. The ring and the preview arrow are the hover only.
+- **DROPPED:**
+  - the RAIL is docked;
+  - NYX's SMG flies back along a solid amber arrow to NYX's post ("to NYX");
+  - NYX's tether is gone.
+
+The other marks are unchanged. To fit the tile, the two rows of tiles moved up (10 and 26 px) and the bottom band was compacted: the stop banner now sits under the HQ tape, and REFUSALS sits under the devices.
+
+### Calls made for these plates (open questions for the designer)
+
+1. **Implants = the firmware pool.** v49-1 says "implants". The plates use the firmware names and text under the label IMPLANT, with "fits ATK . CRIT" from the firmware's allowed slices.
+2. **POWER cards:** no POWER card exists in content. The names and effects drawn are placeholders.
+3. **"Held segments above the asset cap"** is read as wheel segments held at the fight's end, against a per-fight cap: 12/12 held, cap 9. What is the cap, and is it per runner or per site?
+4. **Mid SERVER RACK Heat:** "ELITE rewards" is read as the rewards only, so no Heat +1 sticker is drawn on the mid rack. Does the rack's elite fight add Heat?
+5. **TERMINAL:** no SKIP or leave is drawn. Can the player take nothing?
+6. **SAFETY NET:** drawn as a one-time save: the runner and deck survive; unbanked credits and raid assets are still lost; the Heat still applies. Is that the rule, and how many nets are there?
+7. **Runner-lost Heat:** drawn as "+12 +2 (tier 2) = +14" (12 + site tier).
+8. **Campaign summary numbers** are sample values. "Sites lost" counts sites Solace retook.
+9. **Naming:** the new plates have no raid-shop or HQ-stock text, so FIELD SUPPLY and STASH do not appear. The older raid plates (`raid_b_setup_armory.png` and the raid NOTES) still say ARMORY for the round-1 raid shop and were not renamed in this pass.

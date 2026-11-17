@@ -656,6 +656,9 @@ def plate_marks():
         rrect(img, [x, y + h - 40, x + w, y + h], 0, fill=(8, 10, 18, 230))
         text(img, (x + 12, y + h - 20), title, font('anton', 26), WHITE, 'lm')
 
+    # rows moved up 10 / 26 px (v50) to make room for the REPLACE SUPPORT tile in the bottom band; the marks are unchanged
+    R1, R2 = 100, 414
+
     def m_slots(b):
         lit = [c for c in SLOT_MAKO if c not in set(DOCK_R1.values()) | set(DEV_R1)]
         slots(b, T_SLOTS, lit=lit[:3])
@@ -663,22 +666,22 @@ def plate_marks():
         for c, dv in DEV_R1.items():
             dev_on(b, c, dv)
         slot_count(b, 2, len(T_SLOTS), 1160, 330)
-    tile(30, 110, 600, 300, 'SLOTS: empty . lit . weapon . device . 2/10', m_slots, (800, 250, 1400, 550))
+    tile(30, R1, 600, 300, 'SLOTS: empty . lit . weapon . device . 2/10', m_slots, (800, 250, 1400, 550))
 
     def m_reach(b):
         reach_cells(b, REACH_HOVER, OCOL['MAKO'])
         docked(b, 'MAKO', HOVER)
-    tile(660, 110, 600, 300, 'WEAPON REACH on cells', m_reach, (840, 300, 1440, 600))
+    tile(660, R1, 600, 300, 'WEAPON REACH on cells', m_reach, (840, 300, 1440, 600))
 
     def m_support(b):
         post(b, 'NYX', THEN); tether(b, 'NYX', DOCK_R1['NYX'], THEN); docked(b, 'NYX', DOCK_R1['NYX'])
         x, y = P(DOCK_R1['NYX']); share_pill(b, 'NYX', x - 70, y + 34)
         post(b, 'MAKO', TARGET)
-    tile(1290, 110, 600, 300, 'POST . SUPPORTER LINK . share N%', m_support, (680, 140, 1280, 440))
+    tile(1290, R1, 600, 300, 'POST . SUPPORTER LINK . share N%', m_support, (680, 140, 1280, 440))
 
     def m_route(b):
         common_route(b, 1, fell=(0,))
-    tile(30, 440, 600, 300, 'ROUTE: TARGET/FELL . THEN . END', m_route, (480, 160, 1080, 460))
+    tile(30, R2, 600, 300, 'ROUTE: TARGET/FELL . THEN . END', m_route, (480, 160, 1080, 460))
 
     def m_units(b):
         lanes_ground(b, [(LANE_A, ENT_A, TARGET)])
@@ -686,7 +689,7 @@ def plate_marks():
         unit_on(b, 'drone', (4, 4), hp=1.0, pips=('J',)); unit_on(b, 'bike', (4, 3), hp=.8, pips=('S',))
         kill_bits(b, 'trooper', (4, 2), seed=4)
         wave_stack(b, ENT_A, [('trooper', 3), ('riot', 1)], dx=-60, dy=-90)
-    tile(660, 440, 600, 300, 'UNITS (v4) . HP . status . wave', m_units, (900, 330, 1500, 630))
+    tile(660, R2, 600, 300, 'UNITS (v4) . HP . status . wave', m_units, (900, 330, 1500, 630))
 
     def m_hq(b):
         post(b, 'URSA', HQ)
@@ -695,28 +698,97 @@ def plate_marks():
         for k, dx in enumerate((-50, 40)):
             big_sticker(b, '-1', hx + dx + 30, hy - 140, RED, WHITE, w=86, h=70, rot=(-6, 8)[k], size=50)
         stop_mark(b, HQ, 'END', None)
-    tile(1290, 440, 600, 300, 'HQ DAMAGE: -1 per unit in', m_hq, (380, 110, 980, 410))
+    tile(1290, R2, 600, 300, 'HQ DAMAGE: -1 per unit in', m_hq, (380, 110, 980, 410))
 
-    # verdicts + devices + chrome (flat)
-    y = 790
+    # verdicts + devices + chrome (flat); compacted in v50 to make room for REPLACE SUPPORT (same marks, same sizes)
+    y = 728
     text(img, (40, y), 'VERDICT', font('anton', 34), WHITE)
     for k, (lab, col) in enumerate((('HOLDS', LIME), ('FALLS', RED), ('HELD', LIME), ('FELL', RED))):
         x = 40 + k * 150
         rrect(img, [x, y + 50, x + 132, y + 98], 8, fill=col, outline=INK, width=3)
         text(img, (x + 66, y + 74), lab, font('anton', 32), INK if col == LIME else WHITE, 'mm')
-    hq_tape(img, 17, 20, lost=3, x=40, y=y + 130)
+    hq_tape(img, 17, 20, lost=3, x=40, y=y + 114)
+    stop_banner(img, [('D4', 'fell'), ('A3', 'cur'), ('HQ', 'end')], 1, x=60, y=y + 198)
     text(img, (680, y), 'STREET DEVICES (v42)', font('anton', 34), WHITE)
     for k, dv in enumerate(('BARRICADE', 'MINE', 'TAR', 'SHOCK', 'GATE')):
         x = 720 + k * 120
         ov = V.blank(); D.dev_badge(ov, dv, x, y + 90, r=30); img.alpha_composite(ov)
-        text(img, (x, y + 150), dv, font('mono', 18), DIM, 'mm')
-    text(img, (680, y + 190), 'no-mark = "device here" (slot refused)', font('mono', 18), DIM)
-    text(img, (1340, y), 'REFUSALS . CHROME', font('anton', 34), WHITE)
+        text(img, (x, y + 146), dv, font('mono', 18), DIM, 'mm')
+    text(img, (680, y + 172), 'no-mark = "device here" (slot refused)', font('mono', 18), DIM)
+    text(img, (680, y + 210), 'REFUSALS', font('anton', 30), WHITE)
     for k, kind in enumerate(('taken', 'far')):
-        ov = V.blank(); D.refuse_badge(ov, kind, 1380 + k * 90, y + 80, r=24); img.alpha_composite(ov)
-    text(img, (1340, y + 120), 'taken . too far', font('mono', 18), DIM)
-    stop_banner(img, [('D4', 'fell'), ('A3', 'cur'), ('HQ', 'end')], 1, x=1340, y=y + 150)
-    frame_caption(img, 'raid mark sheet (brief item 2): slots, reach, devices, units, supporter link, route stops, verdict, HQ damage')
+        ov = V.blank(); D.refuse_badge(ov, kind, 870 + k * 90, y + 230, r=24); img.alpha_composite(ov)
+    text(img, (1010, y + 231), 'taken . too far', font('mono', 18), DIM, 'lm')
+
+    # ---- v50: REPLACE SUPPORT. A defender's full-strength weapon may dock on a slot a supporter's weapon holds; the
+    # supporter's weapon pops back to its owner. While a defender weapon is held the slot reads REPLACE SUPPORT.
+    def strip(x, y, w, h, label, fn, crop):
+        b = base()
+        fn(b)
+        piece = b.crop(tuple(S(list(crop))))
+        img.alpha_composite(piece, (S(x), S(y)))
+        rect(img, [x, y, x + w, y + h], outline=GREY, width=2)
+        f = font('anton', 20)
+        rrect(img, [x + 6, y + 6, x + tw(label, f) + 26, y + 34], 6, fill=(8, 10, 18, 225))
+        text(img, (x + 16, y + 20), label, f, AMB, 'lm')
+    RS = (2, 2)                                     # c3: a slot NYX's SMG may hold (supporter) that is also one of MAKO's at D4
+
+    def pop_arc(b, a, z, dashed, seed=21, bow=46):
+        """the pop-back arrow: amber, bowed up, from the slot to the supporter's post (dashed = hover preview)"""
+        (x0, y0), (x1, y1) = a, z
+        cx, cy = (x0 + x1) / 2, min(y0, y1) - bow
+        pts = [((1 - t) ** 2 * x0 + 2 * (1 - t) * t * cx + t * t * x1, (1 - t) ** 2 * y0 + 2 * (1 - t) * t * cy + t * t * y1)
+               for t in np.linspace(0, 1, 40)]
+        if dashed:
+            for k in range(0, len(pts) - 3, 5):
+                pencil_line(b, pts[k:k + 3], AMB, 6, seed=seed + k)
+            ang = math.atan2(pts[-1][1] - pts[-4][1], pts[-1][0] - pts[-4][0])
+            for s_ in (-.5, .5):
+                pencil_line(b, [pts[-1], (pts[-1][0] - 22 * math.cos(ang + s_), pts[-1][1] - 22 * math.sin(ang + s_))], AMB, 6, seed)
+        else:
+            arrow_hand(b, pts, AMB, 7, head=24, seed=seed)
+        return pts
+
+    def replace_slot(b):
+        q = G.quad(RS[0], RS[1], .14)
+        gl = Image.new('RGBA', b.size, (0, 0, 0, 0))
+        poly(gl, q, fill=AMB[:3] + (170,))
+        b.alpha_composite(gl.filter(ImageFilter.GaussianBlur(S(7))))
+        poly(b, q, fill=AMB[:3] + (70,), outline=INK, width=7)
+        poly(b, q, outline=AMB, width=3.5)
+
+    def m_replace_held(b):
+        post(b, 'NYX', THEN, alpha=.5); post(b, 'MAKO', TARGET, alpha=.5)
+        replace_slot(b)
+        tether(b, 'NYX', RS, THEN)
+        docked(b, 'NYX', RS)
+        sx, sy = P(RS)
+        tx, ty = P(THEN)
+        pencil_circle(b, sx, sy, 50, 32, YEL, 6)                              # hover
+        pop_arc(b, (sx - 30, sy - 46), (tx + 16, ty - 2), dashed=True)        # hover: where the SMG will go
+        f = font('anton', 21)
+        lab = 'REPLACE SUPPORT'
+        lw = tw(lab, f) + 22
+        rrect(b, [sx - lw / 2 - 40, sy + 38, sx + lw / 2 - 40, sy + 68], 7, fill=AMB, outline=INK, width=3)
+        text(b, (sx - 40, sy + 53), lab, f, INK, 'mm')
+        RK.stick(b, C.wpn_c('RAIL', 2), sx + 52, sy - 34, 8, scale=.62, lift=10)   # MAKO's rail, held (full strength)
+
+    def m_replace_dropped(b):
+        post(b, 'NYX', THEN); post(b, 'MAKO', TARGET)
+        docked(b, 'MAKO', RS)
+        sx, sy = P(RS)
+        tx, ty = P(THEN)
+        pts = pop_arc(b, (sx - 34, sy - 44), (tx + 16, ty - 2), dashed=False, seed=33)
+        mx, my = pts[len(pts) // 2]
+        RK.stick(b, C.wpn_c('SMG', 1), mx + 6, my - 4, -16, scale=.46)              # NYX's SMG in flight, home
+        bits_field(b, (mx + 30, my - 20, sx - 10, sy - 50), n=26, cols=(AMB, WHITE), size=14, seed=4)
+        label_tag(b, tx - 20, ty + 112, 'to NYX', AMB, 24)
+
+    RX, RY = 1290, 728
+    text(img, (RX, RY), 'REPLACE SUPPORT (v50)', font('anton', 34), WHITE)
+    for k, (lab, fn) in enumerate((('HELD + HOVER', m_replace_held), ('DROPPED', m_replace_dropped))):
+        strip(RX + k * 304, RY + 50, 296, 266, lab, fn, (774, 180, 1070, 446))
+    frame_caption(img, 'raid mark sheet (brief item 2 + v50 replace support): slots, reach, devices, units, supporter link, route stops, verdict, HQ damage')
     return save(img, 'raid_marks.png')
 
 

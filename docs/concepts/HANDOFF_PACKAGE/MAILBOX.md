@@ -1420,3 +1420,22 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
   - the street-level shop band is much dimmer than the plate's bright storefront row;
   - the lower tier is sparse: a few slot rooms on dark ground, where the plate has a lit gallery;
   - seed 11 still has a slight green/teal cast on its left blocks.
+
+### A-150 · 2026-11-17 · Missing screen plates for build (reward, loss, stop banner, REPLACE SUPPORT) · READY
+- **Where:** `screens_b107/`, script `scripts/reward_loss.py`. NOTES.md "Plates added 2026-11-17" describes every state.
+- **Plates:**
+  - `netrun_reward_a.png` (ROUTER), `_b.png` (ELITE), `_c.png` (TERMINAL), `_d_mid.png` (SERVER RACK at layer 4),
+    `_d_final.png` (SERVER RACK final, plus the tier 3 variants);
+  - `loss_printout.png`: the T11 campaign loss, plus the RUNNER LOST and SAFETY NET variants;
+  - `stop_banner.png`: every stop state at 1:1;
+  - `raid/raid_marks.png`: a new REPLACE SUPPORT (v50) tile.
+- **Rewards source:** the vertical-slice rules v49-1 (the VS session's list).
+- **Guesses, to confirm (VS or designer):**
+  - the IMPLANT pool drawn from firmware;
+  - POWER card names are placeholders;
+  - the asset cap of 9 counts wheel segments held at the end of the fight;
+  - no Heat +1 on the mid rack;
+  - no SKIP on TERMINAL;
+  - the safety net keeps the runner and deck, but unbanked credits and raid assets are still lost and Heat still applies.
+- **Naming:** the older raid plates still say ARMORY for the round-1 raid shop. Build renames it in its own text to
+  FIELD SUPPLY. I'll relabel the plates in the next art pass.

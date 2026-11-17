@@ -15,7 +15,7 @@ ROWS = [
         ('raid/raid_e_hq_stop.png', '(e) HQ stop, -1 per unit in'),
         ('raid/raid_f_result_held.png', '5 RESULT held'),
         ('raid/raid_f_result_lost.png', '5 RESULT lost: TARGET ACQUIRED'),
-        ('raid/raid_marks.png', 'raid mark sheet'),
+        ('raid/raid_marks.png', 'raid mark sheet (+ v50 replace support)'),
     ]),
     ('HQ WORKSHOP over hq_idle . ADVANCE (T5) . BLOCK SERVER v2', [
         ('hq_recruit.png', 'RECRUIT'), ('hq_weapons.png', 'WEAPONS'), ('hq_talents.png', 'TALENTS'),
@@ -24,6 +24,14 @@ ROWS = [
     ('', [
         ('block_server_v2.png', 'BLOCK SERVER v2'), ('block_server_v2_beaten.png', 'BLOCK SERVER v2 beaten'),
         ('block_server_kit.png', 'BLOCK SERVER kit breakdown'),
+    ]),
+    ('NETRUN REWARD (v49-1) . CAMPAIGN LOSS . STOP BANNER (added 2026-11-17)', [
+        ('netrun_reward_a.png', '(a) ROUTER: card pick'), ('netrun_reward_b.png', '(b) ELITE: card + implant'),
+        ('netrun_reward_c.png', '(c) TERMINAL: choose one'), ('netrun_reward_d_mid.png', '(d) SERVER RACK mid'),
+    ]),
+    ('', [
+        ('netrun_reward_d_final.png', '(d) SERVER RACK final'), ('loss_printout.png', 'T11 loss + runner lost'),
+        ('stop_banner.png', 'raid stop banner spec'),
     ]),
 ]
 TW, TH, G, MX = 560, 315, 22, 30
@@ -36,7 +44,7 @@ def main():
     h = 90 + sum((44 if t else 0) + TH + 40 + G for t, _ in ROWS)
     W_ = MX * 2 + 4 * TW + 3 * G
     S = Image.new('RGB', (W_, h), (14, 15, 20)); d = ImageDraw.Draw(S)
-    d.text((MX, 22), 'B-107 screens (DRAFT, art concept plates, 2026-11-16): raid, HQ workshop, advance, BLOCK SERVER v2', font=af, fill=(212, 255, 0))
+    d.text((MX, 22), 'B-107 screens (DRAFT, art concept plates, 2026-11-16/17): raid, HQ workshop, advance, BLOCK SERVER v2, netrun reward, loss', font=af, fill=(212, 255, 0))
     y = 90
     for title, items in ROWS:
         if title:
