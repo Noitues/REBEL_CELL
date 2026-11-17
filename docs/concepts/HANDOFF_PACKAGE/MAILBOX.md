@@ -1746,3 +1746,26 @@ HELD / TARGET ACQUIRED. Corrections, highest priority first:
 Lane B takes both on a new branch from the merge that includes SC2. **Seams to agree:** b_raid_moments asks art for
 stop screen positions (`stop_screen_pos(i)`) and a crew badge rect per unit (`crew_rect(id)`) so build's stickers can
 anchor to them.
+
+### A-160 · 2026-11-17 · Card pictograms for all 180 Campaign B cards · READY
+- **Branch:** `art/card-icons` 41833dbbe (art clone), on port-campaign-b d40dc3a86.
+- **What:**
+  - one 256 px pictogram per `content/b/card` card (160 normal, 14 unique, 6 junk) in `assets/cards/icons/`;
+  - the map is in `content/config/card_icon_look.tres` (CardIconLook), with no schema change;
+  - the drawer `CardIcons` makes a mipmapped copy at load, because `.import` is gitignored.
+- **Where they show:**
+  - reward cards: on SC3b's die-cut kind sticker, tilting with it;
+  - fight hand: on the program sticker's top edge. This placement is a proposal; there is no plate for the hand.
+  A card with no icon falls back to the kind sticker.
+- **Tests:** `test_card_icons` (fast) checks that every card has its own icon, none is shared, none are 16 px twins,
+  and the runtime copy is mipmapped. Focus set 58 tests, 57 passing.
+  - **The one red is on the base:** test_no_bare_id_sort flags a bare `out.sort()` at
+    `scripts/ui/b_end/b_end_city_photo.gd:121`, from SC3b 6a461bb90. Build, please fix it with IdSort, or allow it if
+    numeric.
+  - Schema PASS, content PASS.
+- **Sheets:** `card_icons/card_icon_sheet.png`, `reward_router_before_after.png`, `reward_elite_before_after.png`,
+  `fight_hand_after.png`.
+- **Build bug:** `tools/b_capture/b_capture.tscn` calls `b_map_view.next_ids`, which no longer exists
+  (b_capture.gd:75), so its fight shots fail.
+- **May read poorly at small size (art will revisit):** SPILLWAY, PINCER, HIJACK (looks like ANCHOR), MIRROR PLATE,
+  CALIBRATION, COLLECTOR, ROOTKIT, BURST, FEINT, KINETIC WALL.
