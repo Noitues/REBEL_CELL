@@ -1541,3 +1541,35 @@ on all four; these are the corrections, priority first.
   - the combat room box is still pale cream;
   - captures come out at 1280x720 instead of 1920x1080.
 - **Questions for the designer:** is the flicker at 3 Hz / 6 beats OK? Should reward bits fly in one stream per reward?
+
+### A-154 · 2026-11-17 · Netrun plate pass 2 on RC4b · READY for merge (look gaps remain)
+- **Branch:** `art/netrun-plate-pass2` 2cf4183e8 (art clone), on 6299808f (RC4b). The art-pass commit b1cdc56f is
+  mislabelled "A-150"; this entry is the right one.
+- **Sheet:** `netrun_plate_fixture/game_vs_plate_02.jpg`, showing seeds 7, 11 and 3 (rooms on tall buildings).
+- **Changes:**
+  - band_fade off (designer: towers run off-frame);
+  - the camera's frame fitted to the room nodes: a pure function, keeping the plate's pitch, lens and yaw. The new
+    `test_netrun_frame_fit` (tier full) covers seeds 1–8 at landing, mid step and underground, including 9 rooms on
+    tall buildings and 21 stacked tier 0/1 pairs;
+  - a denser shop row (storefront bays, pavilions on empty lots);
+  - a lit lower gallery;
+  - exposure 1.12.
+- **Bug fixed:** on RC4b, underground rooms on adjacent lots had overlapping click rects (seeds 2, 3 and 5). The
+  hit rect is now the room's open front, and a test asserts no overlaps.
+- **Values (UI cropped, median / under 0.10 / over 0.85):**
+  - seed 7: 0.175 / 27 % / 1.6 %;
+  - seed 11: 0.172 / 29 % / 0.3 %;
+  - seed 3: 0.158 / 33 % / 0.6 %;
+  - plate: 0.170 / 32 % / 0.9 %.
+- **Tests:** 97 tests, 0 failing (8 scripts including test_anim_r6_rules and test_b_screens_flow); schema PASS;
+  content PASS. Full suite not run.
+- **Outside the ownership list:** `city_finish.gdshader` (a `green_tame` uniform) and one line in `b_street_view.gd`.
+- **Art's own verdict:** this is not the plate yet.
+  - The lower gallery reads as a regular row of beige rectangles.
+  - The rooms are small and grey, where they should be the brightest thing.
+  - The shop row is still patchy.
+  - Seed 11's green cast is tamed on the final picture; its source is not found.
+  These are the next pass.
+- **Open (DECISIONS):**
+  - does "no fade" also cover `zr_net_win_top_fade` (fewer lit windows high up)?
+  - may the fit widen beyond the plate frame (up to 1.8x)? No seed needs it today.
