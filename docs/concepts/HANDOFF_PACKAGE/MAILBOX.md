@@ -1387,3 +1387,36 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
 - **Run:** focused tests 230, 0 failing, 2 pending; schema PASS; content PASS.
 - **Remaining gap:** the street's own block holds tall towers, so the upper half reads as towers, not roofs. Aim and
   fade can't fix that without faking. A possible rules preference (mid-rise frontage blocks) is with the designer.
+
+### A-149 · 2026-11-16 · RC3 plate view on the real netrun screen · READY for review
+- **Branch:** `art/netrun-street-integrated` 902a24062 (art clone), on RC3 2325bef2. Working tree clean.
+- **Sheet:** `netrun_plate_fixture/game_vs_plate_01.jpg`. It shows seeds 7 and 11, each at landing, mid step and
+  underground, next to the plate.
+- **What it does:** `BStreetView` drives the netrun screen from `gs.street_run()`:
+  - plate camera on `center_lot`;
+  - near side and foreground flattened, with HQs and street cars hidden;
+  - rooms cut at their `storey` or seated in their tier slot;
+  - walkways only between rooms on one plate level;
+  - `CityNetrunPlate` (section, shop band, roof props, street look) shared with the fixture;
+  - `zr_net_plate_on`.
+- **Values with the UI cropped (median / under 0.10 / over 0.85):**
+  - seed 7: 0.155 / 36 % / 0.5 %;
+  - seed 11: 0.171 / 27 % / 0.3 %;
+  - plate: 0.170 / 32 % / 0.9 %.
+- **Fixed this pass:**
+  - bright bars over the cut, which were street cars;
+  - slot rooms reading as storefronts, now warm recessed slots;
+  - walkways crossing levels;
+  - two suite regressions: the street shaders now include rc_common (`test_vfx_tiers`), and there is an ALLOWED
+    entry for the numeric `prisms_on` sort.
+- **Run:**
+  - focus set 53, 0 failing; `test_netrun_street_integrated` 16, 0 failing; schema PASS; content PASS;
+  - the full suite was not re-run after the fixes (the earlier run failed only on those two). Build, please run it
+    on merge.
+- **Contract check:** near-side cells go through `near_keys`; the section stands at `section.grade_bu`
+  (`run_grade`), which also sets the wet-reflection plane and the band fade.
+- **Remaining look gaps (next pass):**
+  - the upper half reads as towers, not the plate's roofline (the mid-rise preference is with the designer);
+  - the street-level shop band is much dimmer than the plate's bright storefront row;
+  - the lower tier is sparse: a few slot rooms on dark ground, where the plate has a lit gallery;
+  - seed 11 still has a slight green/teal cast on its left blocks.
