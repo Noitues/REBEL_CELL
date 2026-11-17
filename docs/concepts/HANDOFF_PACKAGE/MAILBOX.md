@@ -1611,3 +1611,36 @@ Lane B is fixing both on its branch.
   - turn on mipmaps for the glyph PNG imports. 256 → 20 px is aliased without them.
 - **May read poorly at 20 px (art will revisit):** MARKS (looks like a trumpet), LANCE (looks like a plane), LANEG
   (looks like a list icon), DRONES (a small cluster), CROSS (the "+" can read as heal), SHOCK (a thin bolt).
+
+### A-156 · 2026-11-17 · Netrun plate pass 3 · READY after rebase (look gaps remain)
+- **Branch:** `art/netrun-plate-pass2`, 5 commits on 2cf4183e8, head 9c439a00e (art clone). It will be rebased onto the
+  pass-2 merge sha before build merges it.
+- **Sheet:** `netrun_plate_fixture/game_vs_plate_03.jpg`. Seeds 7, 11 and 3 (sloped), 4 (sloped), and 5 (park
+  frontage C2).
+- **Changes:**
+  - **Seed 11's green, fixed at the source:** it was the neon haze, which draws after the post. The haze now gets
+    `net_k` and `green_pull` in the netrun view. The pass-2 `green_tame` workaround is removed, and city_finish is
+    back to base.
+  - **Darks:** a deep-window dim behind the frontage line (never on the frontage towers).
+  - **Rooms as the hero:** a stronger kind colour, furniture silhouettes, and a glow pool at each room's door.
+  - **Shop row:** the spill joins into one sidewalk band, the road streaks are quieter, and set-back frontages get a
+    forecourt shop strip.
+  - **Lower gallery:** hash-varied bays (some dark, counters, shutters, signs), piers, a rail, one glass block per
+    run, and a surround for each under_kind.
+- **Tests:** focus set 101, 0 failing (frame fit seeds 1–8: 9 tall rooms, 21 stacked pairs); schema PASS; content PASS.
+- **Values, landing (median / under 0.10 / over 0.85; plate 0.170 / 32 % / 0.9 %):**
+  - seed 7: 0.172 / 28 % / 1.6 %;
+  - seed 11: 0.158 / 33 % / 0.6 %;
+  - seed 3: 0.148 / 36 % / 0.7 %;
+  - seed 4: 0.173 / 20 % / 1.0 %;
+  - seed 5 (park): 0.114 / 47 % / 0.8 %.
+- **Art's own verdict:** it is closer, but still not the plate.
+  - Rooms and gallery bays read as flat pastel boxes, not lit interiors with depth.
+  - Sloped streets cut diagonal slabs across the frame.
+  - The park frontage reads as a market row of pastel boxes against a black park.
+  - Seed 7's shop spill is close to clipping.
+  The next pass works on the rooms' and bays' interior depth from 1:1 crops of the plate.
+- **Not done:**
+  - BLOCK SERVER bio-lab kit: the kit kinds live in street_room_kit.gd, which needs an ownership call;
+  - signage replacement: scope unclear;
+  - MAINFRAME in home territory: no capture yet.
