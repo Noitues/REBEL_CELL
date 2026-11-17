@@ -5,7 +5,9 @@ Each label gives the plate values (make_vs.values: median luminance, share under
 frame, and for the scene with the game's UI chrome cropped out (the top bar and NETRUN header, CHROME_TOP px, and the legend
 strip, CHROME_BOT px, at a 720-tall capture; scaled with the frame's height). The plate has no chrome: one value set.
 
-Run: python make_game_vs.py <out.jpg> <seed>:<land.png>,<mid.png>,<ug.png> [<seed>:...]
+Run: python make_game_vs.py [--branch=NAME] <out.jpg> <seed>[ note]:<land.png>,<mid.png>,<ug.png> [<seed>:...]
+(--branch: the branch named in the subtitle, default art/netrun-street-integrated; a row's seed may carry a short note after a
+space, e.g. "3 tall frontage".)
 """
 import sys
 
@@ -29,9 +31,11 @@ def fmt(v):
 
 
 def main():
-    out = sys.argv[1]
+    args = [a for a in sys.argv[1:] if not a.startswith('--branch=')]
+    branch = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--branch=')), 'art/netrun-street-integrated')
+    out = args[0]
     rows = []
-    for arg in sys.argv[2:]:
+    for arg in args[1:]:
         seed, files = arg.split(':', 1)
         rows.append((seed, files.split(',')))
     cols = 4
@@ -39,8 +43,8 @@ def main():
     d = ImageDraw.Draw(sheet)
     fa, fs = font('Anton-Regular.ttf', 28), font('IBMPlexSansCondensed-Medium.ttf', 16)
     d.text((PAD, 8), 'Game netrun screen (RC3 street run, plate view) vs golden plate', font=fa, fill=HI)
-    d.text((PAD, 44), 'art/netrun-street-integrated; street_integrated_capture on the real game screen.  frame = whole capture;  '
-           'scene = UI chrome cropped (top %d px, bottom %d px at %d tall)' % (CHROME_TOP, CHROME_BOT, CHROME_REF_H), font=fs, fill=MID)
+    d.text((PAD, 44), '%s; street_integrated_capture on the real game screen.  frame = whole capture;  ' % branch +
+           ('scene = UI chrome cropped (top %d px, bottom %d px at %d tall)' % (CHROME_TOP, CHROME_BOT, CHROME_REF_H)), font=fs, fill=MID)
     plate = Image.open(PLATE).convert('RGB')
     for r, (seed, files) in enumerate(rows):
         y = TOP + r * (H + LAB + PAD)
