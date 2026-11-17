@@ -355,15 +355,16 @@ Shared states:
 
 | Plate | Node | On it |
 |---|---|---|
-| `netrun_reward_a.png` | ROUTER win | ROUTER CLEARED; card pick 1 of 3 (Static Shock, Tailspin, Sanitize) or SKIP. **Over the asset cap** (amber panel): a 12-segment wheel ring with segments held up to the cap in lime and above it in amber. Here 3 above give "+6 cr, 2 cr each, max 6" and the tag "unbanked until a rack". When nothing is over the cap the panel is hidden. A pencil note says what a ROUTER never pays: no flat credits, no run health, no Heat. |
-| `netrun_reward_b.png` | ELITE win | ELITE DOWN plus a HEAT +1 sticker (36 > 37). A richer card pick 1 of 3 (Leech Worm, the POWER card Backdoor, Cold Snap). IMPLANT pick 1 of 2 (Overvolt, Siphon selected), with its own SKIP. |
-| `netrun_reward_c.png` | TERMINAL (no fight) | The DISPATCH line, then CHOOSE ONE of three glass panels: (1) the implant shown (Tracer); (2) upgrade the 2 listed cards (Static Shock > Static Shock+ 4 > 6, Firewall > Firewall+ 6 > 9), drawn hovered with lime glass; (3) heal 5 run health (31 > 36, capped at the max). TAKE IT confirms. |
-| `netrun_reward_d_mid.png` | SERVER RACK, mid (layer 4) | RACK TAKEN; the ELITE rewards (card pick with a POWER card, Root Kit, and implant pick 1 of 2); a BANKED stamp with the banked amounts, "credits and raid assets safe"; HEAL 6 (24 > 30). The HUD credits read BANKED. |
-| `netrun_reward_d_final.png` | SERVER RACK, final (layer 7) | SITE CLAIMED; HEAT +8 ("+3 more on a tier 3 site"); card pick 1 of 3; implant pick 1 of 2; BANKED. A paper variant note: the first tier 3 site's pick is 3 POWER cards (three minis); a tier 3 site may offer a UNIQUE card (a mini with a UNIQUE sticker). |
+| `netrun_reward_a.png` | ROUTER win | ROUTER CLEARED; card pick 1 of 3 (Static Shock, Tailspin, Sanitize) or SKIP. **OVER CAP > CREDITS** (amber panel): "held segments over the raid-asset cap (the cap is per asset type)", the over-cap segments with an arrow to credits, "+cr", "2 cr per segment, max 6 per fight", and the tag "unbanked until a rack". No cap number is printed. When nothing is over the cap the panel is hidden. A pencil note says what a ROUTER never pays: no flat credits, no run health, no Heat. |
+| `netrun_reward_b.png` | ELITE win | ELITE DOWN plus a HEAT +1 sticker (36 > 37). A richer card pick 1 of 3 (Leech Worm, the POWER card OVERWATCH, Cold Snap). IMPLANT pick 1 of 2 from the one rarity-weighted pool (LIVE WIRE, PRIMED selected), with its own SKIP. |
+| `netrun_reward_c.png` | TERMINAL (no fight) | The DISPATCH line, then CHOOSE ONE of three glass panels: (1) the implant shown (SNAP NUDGE); (2) upgrade the 2 listed cards (Static Shock > Static Shock+, Firewall > Firewall+; the before/after numbers are marked "sample"), drawn hovered with lime glass; (3) heal 5 run health (31 > 36, not over the max), with the note "offered only when hurt: at full health, 2 options". TAKE IT confirms. No SKIP button, but a dashed "reserved: SKIP" slot keeps the room for one. |
+| `netrun_reward_d_mid.png` | SERVER RACK, mid (layer 4) | RACK TAKEN plus a HEAT +1 sticker ("elite-strength fight"); the ELITE rewards (card pick with the POWER card CATALYST, and implant pick 1 of 2: OVERCHARGE selected, DEAD MAN'S SWITCH); a BANKED stamp with the banked amounts (marked "sample amounts"), "credits and raid assets safe"; HEAL 6 (24 > 30). The HUD credits read BANKED. |
+| `netrun_reward_d_final.png` | SERVER RACK, final (layer 7) | SITE CLAIMED; HEAT +8 ("+3 more on a tier 3 site"); card pick 1 of 3 (with TEMPOENGINE); implant pick 1 of 2 (LONG NUDGE, CHAIN REACTOR selected); BANKED. A paper variant note: the first tier 3 site's pick is 3 POWER cards (CATALYST, OVERWATCH, TEMPOENGINE minis); a tier 3 site may offer a UNIQUE card (a mini with a UNIQUE sticker). |
 
 Not drawn, by rule: MAINFRAME is a shop, not a reward. BLOCK SERVER is HQ-only.
 
-Card and implant text is the real `content/cards` and `content/firmware` text. The four POWER cards (Backdoor, Root Kit, Dead Man Switch, Mirror Shard) are art placeholders, because no POWER card exists in content yet.
+- **Cards:** the non-POWER cards use the real `content/cards` text. The POWER cards use the vertical slice names (CATALYST, OVERWATCH, TEMPOENGINE). Their effect text is not baked in: the card reads "Stays in play. (effect text from content)". Their RAM cost is a sample.
+- **Implants:** each tile is labelled IMPLANT and drawn from one rarity-weighted pool: LIVE WIRE, LONG NUDGE, SNAP NUDGE, DEAD MAN'S SWITCH, OVERCHARGE, PRIMED, CHAIN REACTOR. No firmware names are used. Each tile shows its name, "(effect text from content)" and a rarity chip marked "pool rarity (sample)". The tiers drawn are COMMON for LIVE WIRE / LONG NUDGE / SNAP NUDGE, UNCOMMON for DEAD MAN'S SWITCH / OVERCHARGE / PRIMED, and RARE for CHAIN REACTOR. These are samples, not data.
 
 ### Campaign loss: `loss_printout.png`
 
@@ -383,18 +384,19 @@ Card and implant text is the real `content/cards` and `content/firmware` text. T
 - **Variant panel, right:** a runner lost on a netrun (the T4 L5 trace printout, not the campaign end).
   - **RUNNER LOST** shows:
     - the runner FLATLINED, gone for good;
-    - lost with the runner: the deck (19 cards), unbanked credits, unbanked raid assets;
-    - HEAT +12 +2 (tier 2) = +14;
+    - lost with the runner: the whole deck, all unbanked credits, all unbanked raid assets;
+    - HEAT "+12 + site tier", printed as the rule rather than a sum;
     - "banked credits and assets: safe at HQ";
     - TRACE BURNED;
     - GRID VIEW.
   - **SAFETY NET USED / RUNNER EXTRACTED:**
     - the runner lives (back to HQ);
-    - deck kept;
-    - unbanked credits and raid assets lost;
-    - the same Heat;
-    - safety net 1 > 0 left;
+    - the deck returns to its state at the last bank;
+    - unbanked credits and unbanked raid assets lost;
+    - SAFETY NET: used (once);
+    - no Heat line;
     - same GRID VIEW footer.
+- The campaign summary is marked "(sample values)".
 
 ### Stop banner: `stop_banner.png`
 
@@ -427,14 +429,21 @@ The rule: a defender's full-strength weapon may dock on a slot held by a support
 
 The other marks are unchanged. To fit the tile, the two rows of tiles moved up (10 and 26 px) and the bottom band was compacted: the stop banner now sits under the HQ tape, and REFUSALS sits under the devices.
 
-### Calls made for these plates (open questions for the designer)
+### Resolved by the vertical slice (2026-11-17, plates revised in place)
 
-1. **Implants = the firmware pool.** v49-1 says "implants". The plates use the firmware names and text under the label IMPLANT, with "fits ATK . CRIT" from the firmware's allowed slices.
-2. **POWER cards:** no POWER card exists in content. The names and effects drawn are placeholders.
-3. **"Held segments above the asset cap"** is read as wheel segments held at the fight's end, against a per-fight cap: 12/12 held, cap 9. What is the cap, and is it per runner or per site?
-4. **Mid SERVER RACK Heat:** "ELITE rewards" is read as the rewards only, so no Heat +1 sticker is drawn on the mid rack. Does the rack's elite fight add Heat?
-5. **TERMINAL:** no SKIP or leave is drawn. Can the player take nothing?
-6. **SAFETY NET:** drawn as a one-time save: the runner and deck survive; unbanked credits and raid assets are still lost; the Heat still applies. Is that the rule, and how many nets are there?
-7. **Runner-lost Heat:** drawn as "+12 +2 (tier 2) = +14" (12 + site tier).
-8. **Campaign summary numbers** are sample values. "Sites lost" counts sites Solace retook.
-9. **Naming:** the new plates have no raid-shop or HQ-stock text, so FIELD SUPPLY and STASH do not appear. The older raid plates (`raid_b_setup_armory.png` and the raid NOTES) still say ARMORY for the round-1 raid shop and were not renamed in this pass.
+1. **Implants:** labelled IMPLANT, from one rarity-weighted implant pool. The names are LIVE WIRE, LONG NUDGE, SNAP NUDGE, DEAD MAN'S SWITCH, OVERCHARGE, PRIMED and CHAIN REACTOR. No firmware names are used.
+2. **POWER cards:** CATALYST, OVERWATCH and TEMPOENGINE. DEAD MAN'S SWITCH is an implant, not a POWER card.
+3. **Asset cap:** raid assets are capped at 3 per asset type. Held segments over the cap at the end of a won fight pay 2 cr each, max 6. The panel reads "over cap > credits" and prints no cap number.
+4. **Mid SERVER RACK:** gets the Heat +1 sticker.
+5. **TERMINAL:** three options and no skip button, with room kept for one. The heal option is offered only when the runner is hurt.
+6. **SAFETY NET:** the runner survives once and the deck returns to its state at the last bank. Unbanked credits and raid assets are lost. There is no Heat line on the safety-net panel.
+
+### Still open (calls made for these plates)
+
+1. **Implant and POWER effect text** isn't baked in; the plates read "(effect text from content)". The implant rarity tiers and the POWER cards' RAM costs are samples.
+2. **Runner-lost Heat** is printed as the rule ("+12 + site tier") with no worked sum.
+3. **Sample values:**
+   - the campaign summary is marked "(sample values)", and "sites lost" counts the sites Solace retook;
+   - the banked amounts are marked "(sample amounts)";
+   - the TERMINAL upgrade numbers are marked "(sample)".
+4. **Naming:** the new plates have no raid-shop or HQ-stock text, so FIELD SUPPLY and STASH do not appear. The older raid plates (`raid_b_setup_armory.png` and the raid NOTES) still say ARMORY for the round-1 raid shop and were not renamed in this pass.

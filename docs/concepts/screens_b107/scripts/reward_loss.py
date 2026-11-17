@@ -5,9 +5,10 @@
 
 Rules drawn (v49-1): ROUTER win = a card pick only (no flat credits, no run health, no Heat); held segments above the asset
 cap pay 2 cr each (max 6), unbanked until a rack. ELITE = a richer card pick (a POWER card can appear) + 2 implants (pick 1),
-Heat +1. TERMINAL (no fight) = one of: the implant shown / upgrade 2 listed cards / heal 5 run health. SERVER RACK mid =
+Heat +1. Implants come from one rarity-weighted IMPLANT pool (vertical slice names); raid assets cap at 3 per asset type. TERMINAL (no fight) = one of: the implant shown / upgrade 2 listed cards / heal 5 run health. SERVER RACK mid =
 the ELITE rewards + BANKED + heal 6; final = card + 2 implants, BANKED, SITE CLAIMED, Heat +8 (+3 on a tier 3 site).
-MAINFRAME is a shop (not a reward); BLOCK SERVER is HQ-only (not drawn). Amounts are tuning numbers.
+MAINFRAME is a shop (not a reward); BLOCK SERVER is HQ-only (not drawn). Amounts are tuning numbers; effect text of
+the POWER cards and implants is not baked in (the slot reads 'effect text from content'); sample values are labelled.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -15,26 +16,25 @@ from kit import *   # noqa
 
 # ------------------------------------------------------------------ netrun card vocabulary
 CTYPE = {'HACK': PINK, 'SYSTEM': CYAN, 'GUARD': (120, 230, 90, 255), 'POWER': (255, 196, 40, 255)}
-CARDS = {  # name: (ram, type, text, glyph, rarity)  -- real content/cards text; POWER cards are art placeholders (v49 type)
+FXT = '(effect text from content)'
+CARDS = {  # name: (ram, type, text, glyph, rarity)  -- real content/cards text; POWER cards: vertical slice names
     'STATIC SHOCK': (1, 'HACK', 'Deal [4] damage to the target.', 'picto_target', 0),
     'TAILSPIN': (2, 'SYSTEM', 'Spin a wheel [4] ticks and draw [1] card.', 'picto_spin', 1),
     'SANITIZE': (1, 'GUARD', 'Remove CORRUPTED from a chosen slice and gain [3] block.', 'placeholder_shield', 0),
     'LEECH WORM': (3, 'HACK', 'The enemy slice under your pointer gets a [PARASITE] (half output). Exhaust.', 'placeholder_burn', 2),
     'SHORT CIRCUIT': (3, 'HACK', 'Disable the target Hub for [2] turns. Exhaust.', 'raid_jammer', 2),
     'COLD SNAP': (3, 'SYSTEM', 'The target skips its next respin and you gain [3] block.', 'picto_spin_ccw', 1),
-    'BACKDOOR': (2, 'POWER', 'Stays in play. At the start of each turn gain [1] RAM.', 'placeholder_key', 2),
-    'ROOT KIT': (1, 'POWER', 'Stays in play. Your first nudge each turn is [free].', 'picto_again', 2),
-    'DEAD MAN SWITCH': (2, 'POWER', 'Stays in play. When you take damage, deal [2] back.', 'placeholder_bomb', 2),
-    'MIRROR SHARD': (2, 'POWER', 'Stays in play. Your Perfect slices resolve [twice].', 'placeholder_vault', 2),
+    'CATALYST': (2, 'POWER', 'Stays in play. ' + FXT, 'placeholder_vault', 2),     # vertical slice POWER cards: names only;
+    'OVERWATCH': (2, 'POWER', 'Stays in play. ' + FXT, 'picto_target', 2),        # effect text and cost come from content
+    'TEMPOENGINE': (2, 'POWER', 'Stays in play. ' + FXT, 'picto_again', 2),
     'FIREWALL': (1, 'GUARD', 'Gain [6] block.', 'placeholder_shield', 0),
 }
-IMPLANTS = {  # firmware pool text (content/firmware) shown under the v49 name IMPLANT
-    'OVERVOLT': ('ATK and CRIT slices: output [+25%].', 'ATK . CRIT'),
-    'SIPHON': ('ATK slice heals you [2] on Good or better.', 'ATK'),
-    'TRACER': ('ATK or CRIT slice strips [1] resistance on a Perfect.', 'ATK . CRIT'),
-    'STATIC COAT': ('DEF slice also grants [2] shield.', 'DEF'),
-    'BULKHEAD': ('DEF and SHIELD slices: output [+50%].', 'DEF . SHIELD'),
+IMPLANTS = {  # the one rarity-weighted IMPLANT pool (vertical slice names). Rarity tiers drawn here are SAMPLES; effect text from content
+    'LIVE WIRE': ('COMMON', 'picto_spin'), 'LONG NUDGE': ('COMMON', 'picto_spin_ccw'), 'SNAP NUDGE': ('COMMON', 'picto_again'),
+    "DEAD MAN'S SWITCH": ('UNCOMMON', 'placeholder_bomb'), 'OVERCHARGE': ('UNCOMMON', 'placeholder_burn'),
+    'PRIMED': ('UNCOMMON', 'picto_target'), 'CHAIN REACTOR': ('RARE', 'raid_jammer'),
 }
+RARC = {'COMMON': (176, 182, 200, 255), 'UNCOMMON': (92, 225, 255, 255), 'RARE': (255, 196, 40, 255)}
 HEATC = (255, 120, 40, 255)
 
 
@@ -97,8 +97,8 @@ def net_card(img, x, y, w, h, name, rot=0, sel=False, dim=False, plus=False, uni
 
 
 def implant_tile(img, x, y, w, h, name, rot=0, sel=False, dim=False):
-    """An implant: a die-cut microchip sticker (pins, lime die) beside its name tape, effect and the slices it fits."""
-    tx, fits = IMPLANTS[name]
+    """An implant: a die-cut microchip sticker (pins, lime die) beside its name tape, its pool rarity and the effect slot."""
+    rar, gname = IMPLANTS[name]
     L = layer(w + 40, h + 40); o = 20
     if sel:
         gl = layer(w + 40, h + 40)
@@ -117,14 +117,18 @@ def implant_tile(img, x, y, w, h, name, rot=0, sel=False, dim=False):
     rrect(L, [cx0, cy0, cx0 + cs, cy0 + cs], 8, fill=(40, 44, 58, 255), outline=WHITE, width=3)
     rrect(L, [cx0 + cs * .17, cy0 + cs * .17, cx0 + cs * .83, cy0 + cs * .83], 5, fill=LIME)
     gsz = int(cs * .5)
-    L.alpha_composite(glyph('picto_target' if 'ATK' in fits else 'placeholder_shield', gsz, INK), (S(cx0 + cs / 2 - gsz / 2), S(cy0 + cs / 2 - gsz / 2)))
+    L.alpha_composite(glyph(gname, gsz, INK), (S(cx0 + cs / 2 - gsz / 2), S(cy0 + cs / 2 - gsz / 2)))
     text(L, (cx0 + cs / 2, cy0 + cs + 24), 'IMPLANT', font('mono', 15), LIME, 'mm')
     X = cx0 + cs + 26
     f = font('anton', 30)
     rect(L, [X - 2, o + 20, X + tw(name, f) + 22, o + 62], fill=WHITE)
     text(L, (X + 10, o + 42), name, f, INK, 'lm')
-    rich(L, X, o + 76, tx, font('plex', 19), w - (X - o) - 22, (232, 232, 240, 255), YEL, lh=24)
-    text(L, (X, o + h - 30), 'fits  ' + fits, font('mono', 16), DIM, 'lm')
+    text(L, (X, o + 84), FXT, font('plex', 19), DIM, 'lm')
+    rc = RARC[rar]
+    rf = font('mono', 15)
+    rrect(L, [X, o + h - 44, X + tw(rar, rf) + 20, o + h - 20], 5, fill=INK, outline=rc, width=2)
+    text(L, (X + 10, o + h - 32), rar, rf, rc, 'lm')
+    text(L, (X + tw(rar, rf) + 32, o + h - 32), 'pool rarity (sample)', font('mono', 14), DIM, 'lm')
     if dim:
         sh = layer(w + 40, h + 40); rrect(sh, [o, o, o + w, o + h], 14, fill=(6, 6, 12, 150)); L.alpha_composite(sh)
     rotate_paste(img, L, x + w / 2, y + h / 2, rot, sh=(8, 12, 16, 160))
@@ -223,6 +227,7 @@ def banked_block(img, x, y, heal=None, w=420):
     stamp(img, 'BANKED', x + 130, y + 104, LIME, rot=-7, size=54)
     text(img, (x + 250, y + 74), '14 cr', font('anton', 34), WHITE)
     text(img, (x + 250, y + 114), '1 raid asset', font('anton', 26), WHITE)
+    text(img, (x + 250, y + 146), '(sample amounts)', font('mono', 15), DIM)
     text(img, (x + 24, y + 168), 'credits and raid assets safe', font('mono', 17), LIME)
     if heal:
         rrect(img, [x, y + 236, x + w, y + 300], 10, fill=NAVY, outline=PINK, width=2)
@@ -247,12 +252,18 @@ def plate_a():
     skip_btn(img, 675, 860)
     deck_arrow(img, 675, 735)
     # held segments over the asset cap -> credits (the only credits a ROUTER pays)
-    section(img, (1240, 230, 1890, 600), 'OVER THE ASSET CAP', edge=AMB)
-    seg_ring(img, 1340, 360, 62, held=12, cap=9)
-    text(img, (1430, 316), 'wheel held 12/12', font('anton', 28), WHITE)
-    text(img, (1430, 352), 'asset cap 9: 3 above it', font('plex', 21), AMB)
-    text(img, (1270, 484), '+6 cr', font('anton', 56), YEL, 'lm')
-    text(img, (1420, 486), '2 cr each, max 6', font('mono', 18), DIM, 'lm')
+    section(img, (1240, 230, 1890, 600), 'OVER CAP  >  CREDITS', edge=AMB)
+    text(img, (1270, 292), 'held segments over the raid-asset cap', font('plex', 21), WHITE)
+    text(img, (1270, 320), '(the cap is per asset type)', font('plex', 19), DIM)
+    for k in range(3):                                   # the over-cap segments, then where they go
+        sx = 1276 + k * 66
+        poly(img, [(sx, 390), (sx + 54, 390), (sx + 46, 430), (sx + 8, 430)], fill=AMB, outline=INK, width=3)
+        put_glyph(img, 'picto_block', sx + 27, 409, 24, INK)
+    arrow_hand(img, [(1484, 410), (1560, 410)], AMB, 6, head=18, seed=12)
+    ellipse(img, [1580, 388, 1624, 432], fill=YEL, outline=INK, width=3)
+    text(img, (1602, 411), '$', font('anton', 26), INK, 'mm')
+    text(img, (1270, 484), '+cr', font('anton', 56), YEL, 'lm')
+    text(img, (1370, 486), '2 cr per segment, max 6 per fight', font('mono', 18), DIM, 'lm')
     rrect(img, [1266, 530, 1600, 568], 8, fill=(40, 26, 6, 255), outline=AMB, width=2)
     text(img, (1282, 549), 'unbanked until a rack', font('mono', 18), AMB, 'lm')
     hand(img, (1250, 626), 'none over the cap: this panel is hidden', 24, DIM, rot=-1)
@@ -260,7 +271,7 @@ def plate_a():
     hand(img, (1250, 700), 'ROUTER: no flat credits,', 30, YEL, rot=-2)
     hand(img, (1250, 740), 'no run health, no Heat', 30, YEL, rot=-2)
     continue_btn(img)
-    return finish_reward(img, 'netrun_reward_a.png', 'netrun reward (a) ROUTER win: card pick 1 of 3 or SKIP; held segments over the asset cap pay 2 cr each (max 6), unbanked')
+    return finish_reward(img, 'netrun_reward_a.png', 'netrun reward (a) ROUTER win: card pick 1 of 3 or SKIP; held segments over the raid-asset cap > credits (2 cr each, max 6), unbanked')
 
 
 # ================================================================== (b) ELITE
@@ -271,11 +282,11 @@ def plate_b():
     sticker(img, 'ELITE DOWN', 300, 160, 400, 92, YEL, None, rot=-4, size=66)
     heat_sticker(img, 640, 146, 'HEAT +1', sub='36 > 37 (elite)')
     section(img, (170, 230, 1180, 800), 'CARD  .  PICK 1 OF 3  .  rarer pool', sub='a POWER card can appear')
-    card_row(img, ['LEECH WORM', 'BACKDOOR', 'COLD SNAP'], 220, 330, sel=1)
+    card_row(img, ['LEECH WORM', 'OVERWATCH', 'COLD SNAP'], 220, 330, sel=1)
     skip_btn(img, 675, 872)
-    section(img, (1240, 230, 1890, 800), 'IMPLANT  .  PICK 1 OF 2', sub='skip allowed')
-    implant_tile(img, 1270, 300, 590, 200, 'OVERVOLT', rot=-1)
-    implant_tile(img, 1270, 530, 590, 200, 'SIPHON', rot=1, sel=True)
+    section(img, (1240, 230, 1890, 800), 'IMPLANT  .  PICK 1 OF 2', sub='one rarity-weighted pool')
+    implant_tile(img, 1270, 300, 590, 200, 'LIVE WIRE', rot=-1)
+    implant_tile(img, 1270, 530, 590, 200, 'PRIMED', rot=1, sel=True)
     skip_btn(img, 1565, 872)
     text(img, (1250, 930), 'two separate picks: a card AND an implant', font('mono', 17), DIM)
     deck_arrow(img, 675, 735, '+1 = 20')
@@ -306,7 +317,7 @@ def plate_c():
         text(img, (x + 42, 341), str(k + 1), font('anton', 28), INK, 'mm')
         text(img, (x + 80, 340), ttl, font('anton', 38), WHITE, 'lm')
     # 1 the implant shown
-    implant_tile(img, 200, 400, 500, 200, 'TRACER')
+    implant_tile(img, 200, 400, 500, 200, 'SNAP NUDGE')
     text(img, (210, 650), 'the implant is shown before you choose', font('plex', 20), DIM)
     # 2 upgrade the two listed cards (named by the terminal, not picked)
     for i, n in enumerate(('STATIC SHOCK', 'FIREWALL')):
@@ -315,7 +326,7 @@ def plate_c():
         text(img, (956, yy + 107), '>', font('anton', 56), LIME, 'mm')
         net_card(img, 986, yy, 150, 214, n, rot=2, plus=True)
         text(img, (1156, yy + 70), {'STATIC SHOCK': '4 > 6', 'FIREWALL': '6 > 9'}[n], font('anton', 34), YEL, 'lm')
-        text(img, (1156, yy + 110), 'damage' if i == 0 else 'block', font('mono', 16), DIM, 'lm')
+        text(img, (1156, yy + 110), ('damage' if i == 0 else 'block') + ' (sample)', font('mono', 16), DIM, 'lm')
     text(img, (770, 850), 'both, as listed', font('plex', 20), DIM)
     # 3 heal
     put_glyph(img, 'picto_hp', 1420, 500, 110, PINK)
@@ -324,11 +335,18 @@ def plate_c():
     bar(img, 1340, 640, 380, 34, 36 / 50, PINK, seg=10)
     rect(img, [1340 + 380 * 31 / 50, 642, 1340 + 380 * 36 / 50, 672], fill=(255, 255, 255, 140))
     text(img, (1734, 657), '31 > 36', font('anton', 30), WHITE, 'lm')
-    text(img, (1340, 700), 'not over the max (50)', font('plex', 20), DIM)
+    text(img, (1340, 700), 'not over the max', font('plex', 20), DIM)
+    hand(img, (1340, 760), 'offered only when hurt:', 26, YEL, rot=-2)
+    hand(img, (1340, 798), 'at full health, 2 options', 26, YEL, rot=-2)
     hand(img, (760, 900), 'hover: lime glass, the choice lifts', 26, YEL, rot=-2)
     sticker(img, 'TAKE IT', 1020, 990, 240, 66, LIME, None, rot=-2, size=44)
-    hand(img, (1220, 1000), 'no SKIP drawn: open question (notes)', 22, DIM, rot=-1)
-    return finish_reward(img, 'netrun_reward_c.png', 'netrun TERMINAL (no fight): choose one: the implant shown / upgrade the 2 listed cards / heal 5 run health')
+    for k in range(0, 230, 16):                          # room kept for a SKIP / LEAVE button (none in v49-1)
+        line(img, [(1290 + k, 960), (1290 + k + 9, 960)], DIM, 2); line(img, [(1290 + k, 1022), (1290 + k + 9, 1022)], DIM, 2)
+    for k in range(0, 62, 16):
+        line(img, [(1290, 960 + k), (1290, 960 + k + 9)], DIM, 2); line(img, [(1520, 960 + k), (1520, 960 + k + 9)], DIM, 2)
+    text(img, (1405, 991), 'reserved: SKIP', font('mono', 18), DIM, 'mm')
+    text(img, (1540, 991), 'no skip in v49-1; space kept', font('mono', 15), DIM, 'lm')
+    return finish_reward(img, 'netrun_reward_c.png', 'netrun TERMINAL (no fight): choose one: the implant shown / upgrade the 2 listed cards / heal 5 (only when hurt); SKIP slot reserved')
 
 
 # ================================================================== (d) SERVER RACK
@@ -338,33 +356,34 @@ def plate_d(final=False):
     if not final:
         crumb(img, 'REWARD  //  SEED VAULT EXCHANGE . T2  //  SERVER RACK . LAYER 4 OF 7 (mid)')
         sticker(img, 'RACK TAKEN', 300, 160, 400, 92, LIME, None, rot=-4, size=66)
+        heat_sticker(img, 640, 146, 'HEAT +1', sub='elite-strength fight')
         section(img, (170, 230, 1180, 800), 'CARD  .  PICK 1 OF 3  .  elite pool', sub='a POWER card can appear')
-        card_row(img, ['SHORT CIRCUIT', 'ROOT KIT', 'TAILSPIN'], 220, 330, sel=1)
+        card_row(img, ['SHORT CIRCUIT', 'CATALYST', 'TAILSPIN'], 220, 330, sel=1)
         skip_btn(img, 675, 860)
         section(img, (1240, 230, 1890, 610), 'IMPLANT  .  PICK 1 OF 2')
-        implant_tile(img, 1266, 284, 600, 150, 'STATIC COAT', rot=-1, sel=True)
-        implant_tile(img, 1266, 446, 600, 150, 'BULKHEAD', rot=1)
+        implant_tile(img, 1266, 284, 600, 150, 'OVERCHARGE', rot=-1, sel=True)
+        implant_tile(img, 1266, 446, 600, 150, "DEAD MAN'S SWITCH", rot=1)
         banked_block(img, 1240, 628, heal=(6, 24), w=650)
         deck_arrow(img, 675, 735, '+1 = 21')
         continue_btn(img)
-        hand(img, (760, 930), 'mid rack = ELITE rewards + BANKED + heal 6', 24, YEL, rot=-1)
-        return finish_reward(img, 'netrun_reward_d_mid.png', 'netrun reward (d) SERVER RACK, mid (layer 4): elite card pick + implant pick, BANKED (credits + raid assets safe), heal 6')
+        hand(img, (740, 950), 'mid rack = ELITE rewards + Heat +1 + BANKED + heal 6', 22, YEL, rot=-1)
+        return finish_reward(img, 'netrun_reward_d_mid.png', 'netrun reward (d) SERVER RACK, mid (layer 4): elite card pick + implant pick, Heat +1, BANKED (credits + raid assets safe), heal 6')
     crumb(img, 'REWARD  //  SEED VAULT EXCHANGE . T2  //  SERVER RACK . LAYER 7 OF 7 (final)')
     sticker(img, 'SITE CLAIMED', 330, 158, 460, 96, LIME, None, rot=-4, size=68)
     heat_sticker(img, 730, 140, 'HEAT +8', sub='+3 more on a tier 3 site', rot=6)
     section(img, (170, 230, 1180, 760), 'CARD  .  PICK 1 OF 3', sub='tier 3: may hold a UNIQUE card')
-    card_row(img, ['LEECH WORM', 'BACKDOOR', 'TAILSPIN'], 220, 320, sel=0, h=360)
+    card_row(img, ['LEECH WORM', 'TEMPOENGINE', 'TAILSPIN'], 220, 320, sel=0, h=360)
     skip_btn(img, 1060, 722)
     section(img, (1240, 230, 1890, 610), 'IMPLANT  .  PICK 1 OF 2')
-    implant_tile(img, 1266, 284, 600, 150, 'OVERVOLT', rot=-1)
-    implant_tile(img, 1266, 446, 600, 150, 'TRACER', rot=1, sel=True)
+    implant_tile(img, 1266, 284, 600, 150, 'LONG NUDGE', rot=-1)
+    implant_tile(img, 1266, 446, 600, 150, 'CHAIN REACTOR', rot=1, sel=True)
     banked_block(img, 1240, 640, w=650)
     # variant note: tier 3
     paper(img, (250, 784, 1180, 1046), rot=-.6, col=(246, 240, 214, 255), seed=12)
     text(img, (280, 802), 'VARIANT  .  TIER 3 SITES', font('mono', 18), (90, 70, 40, 255))
     text(img, (280, 830), 'first tier 3 site: the pick is 3 POWER cards', font('courierb', 21), INK)
     text(img, (280, 860), 'any tier 3 site: one offer may be a UNIQUE card', font('courierb', 21), INK)
-    for i, n in enumerate(('BACKDOOR', 'DEAD MAN SWITCH', 'MIRROR SHARD')):
+    for i, n in enumerate(('CATALYST', 'OVERWATCH', 'TEMPOENGINE')):
         net_card(img, 290 + i * 118, 898, 100, 136, n, rot=(-3, 0, 3)[i])
     hand(img, (640, 960), '3 POWER', 30, (150, 90, 0, 255), rot=-4)
     net_card(img, 840, 898, 100, 136, 'SHORT CIRCUIT', rot=3)
@@ -430,6 +449,7 @@ def plate_loss():
         typed(M, 24, 118 + i * 28, k, v, kw=80, size=18)
     line(M, [(24, 210), (590, 210)], INK, 2)
     text(M, (24, 222), 'CAMPAIGN SUMMARY', font('courierb', 20), INK)
+    text(M, (300, 224), '(sample values)', font('courier', 16), (120, 120, 120, 255))
     summ = [('DAYS ACTIVE', '23'), ('SITES CLAIMED', '7'), ('SITES LOST', '4  (retaken)'), ('RUNNERS LOST', '2'),
             ('RAIDS HELD', '3'), ('RAIDS LOST', '4'), ('FINAL HEAT', '88'), ('HQ INTEGRITY', '0 / 20')]
     for i, (k, v) in enumerate(summ):
@@ -485,8 +505,8 @@ def slip(img, x, y, w, h, saved=False):
     if not saved:
         text(L, (X, o + 86), 'RUNNER LOST', font('anton', 46), INK)
         rows = [('RUNNER', 'NYX // FIXER LV2', INK), ('STATUS', 'FLATLINED, for good', RED), ('SITE', 'SEED VAULT EXCH. T2', INK),
-                ('', '', INK), ('LOST WITH RUNNER', '', INK), ('DECK', '19 cards', RED), ('UNBANKED CR', '14', RED), ('RAID ASSETS', '1 unbanked', RED),
-                ('', '', INK), ('HEAT', '+12 +2 (tier 2) = +14', HEATC)]
+                ('', '', INK), ('LOST WITH RUNNER', '', INK), ('DECK', 'the whole deck', RED), ('UNBANKED CR', 'all', RED), ('RAID ASSETS', 'all unbanked', RED),
+                ('', '', INK), ('HEAT', '+12 + site tier', HEATC)]
         yy = o + 156
         for k, v, c in rows:
             if k == 'LOST WITH RUNNER':
@@ -499,8 +519,8 @@ def slip(img, x, y, w, h, saved=False):
         text(L, (X, o + 440), 'banked credits and assets: safe at HQ', font('courier', 15), (90, 90, 90, 255))
     else:
         text(L, (X, o + 86), 'RUNNER EXTRACTED', font('anton', 36), INK)
-        rows = [('RUNNER', 'NYX lives (to HQ)', (30, 130, 60, 255)), ('DECK', 'kept', (30, 130, 60, 255)),
-                ('UNBANKED CR', '14 lost', RED), ('RAID ASSETS', '1 lost', RED), ('HEAT', '+12 +2 (tier 2)', HEATC), ('SAFETY NET', '1 > 0 left', INK)]
+        rows = [('RUNNER', 'NYX lives (to HQ)', (30, 130, 60, 255)), ('DECK', 'as at last bank', (30, 130, 60, 255)),
+                ('UNBANKED CR', 'lost', RED), ('RAID ASSETS', 'unbanked lost', RED), ('SAFETY NET', 'used (once)', INK)]
         yy = o + 142
         for k, v, c in rows:
             text(L, (X, yy), k + ' ' + '.' * (12 - len(k)), font('courier', 18), (70, 70, 70, 255))
