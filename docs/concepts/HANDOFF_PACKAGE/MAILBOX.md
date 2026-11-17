@@ -1369,3 +1369,21 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
   - frontage composition: the plate's frontage is lower and shows its roofs, while ours runs off-frame in real
     towers;
   - wiring the fixture into BStreetStage once RC3 lands.
+
+### A-148 · 2026-11-16 · Netrun plate fixture passes 10–11 (DRAFT) · FYI
+- **Branch:** `art/netrun-street-integrated` 3ea0c17fd (art clone).
+- **Sheets:** `netrun_plate_fixture/vs_plate_10.jpg` and `vs_plate_11.jpg`.
+- **Values (vs_plate_11 vs the plate):** median 0.157 vs 0.170; under 0.10 35 % vs 32 %; over 0.85 1.5 % vs 0.9 %.
+- **New in passes 10–11:**
+  - the tunnel tier recessed under the road, with ceiling lamps and floor pools; the lower tier has doorways and stairs;
+  - both tier floors tiled, with puddles reflecting the lights;
+  - lamp posts along the road, and wet streaks from the shop band;
+  - rooms with a screen glow and a desk lamp;
+  - water tanks and huts on the frontage roofs;
+  - frontage facades faded above 8 floors (`band_fade`, netrun view only);
+  - a softer post knee.
+- **Contract:** `zr_net_under_kits` maps each `under_kind` to a kit (basement → terminal, subway → server_rack,
+  utility → router, plaza → mainframe), with a test. The roof fallback is fixture-only.
+- **Run:** focused tests 230, 0 failing, 2 pending; schema PASS; content PASS.
+- **Remaining gap:** the street's own block holds tall towers, so the upper half reads as towers, not roofs. Aim and
+  fade can't fix that without faking. A possible rules preference (mid-rise frontage blocks) is with the designer.
