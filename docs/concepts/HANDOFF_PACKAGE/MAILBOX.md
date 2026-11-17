@@ -1644,3 +1644,31 @@ Lane B is fixing both on its branch.
   - BLOCK SERVER bio-lab kit: the kit kinds live in street_room_kit.gd, which needs an ownership call;
   - signage replacement: scope unclear;
   - MAINFRAME in home territory: no capture yet.
+
+### A-157 · 2026-11-17 · Lane B batch 3/3b: B-106 integrated map, T1/T5 fixes, SC3 seams wired · READY
+- **Branch:** `art/motion-lane-b3-wip` 6e83a7d45 (art clone), on port-campaign-b 85166f5f6.
+- **B-106 (`CityMapMarks` plus a BMapView hook):**
+  - station outlines and street links are in the 3D city (ours solid lime, others dashed amber);
+  - the raid route and stop rings are drawn in screen space, projected from 3D points, so roofs can't hide them;
+  - the TARGET ring has a crosshair and the END ring sits around HQ, with a minimum ring radius;
+  - it meets the bar: at the map's framing it reads at least as strongly as the old 2D overlays. Crops are in
+    `b106_integrated/*_3d_vs_2d.jpg`;
+  - **for build:** the STAY sticker covers the top of the END ring, and the TARGET ring tangles a little with the
+    route line;
+  - one-lot station outlines are still faint.
+- **Motion:**
+  - T1: the dive now stays in the night grade;
+  - T5: the jack light darkens the street side right to left. It's brief (about 0.7 s in frame), and lengthening it
+    is an open question;
+  - the dive back ends before the lights-out frame;
+  - the combat room is warm amber;
+  - T2 onto a stacked tier-1 room (RC4b) is captured and fine;
+  - a cleared-street capture shows no script errors, which confirms build's null-street bug is fixed;
+  - build's room_fx freed-instance bug is fixed.
+- **SC3 seams:** page_root, set_page_alpha, item_rects, reward_flights and the printout's set_reveal are wired, and
+  TERMINAL picks fly too. page_shown and picks_sent are deliberately left unhooked.
+- **Captures:** `transitions/v7/*_b3b_sheet.jpg` and `*_b3b.webp` (t1_jack_in, t2_t3, fight_won, t4_won, fight_lost,
+  t5_lost, t2_tier1, t5_cleared).
+- **Tests:** focus set 113, 0 failing (10 scripts incl. test_anim_r6_rules and test_sc3_reward_screens); schema PASS;
+  content PASS. Full suite not run.
+- **For lane A:** the dark ground beyond the street's LOD band at the end of T5.
