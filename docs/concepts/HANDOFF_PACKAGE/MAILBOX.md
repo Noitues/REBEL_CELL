@@ -1769,3 +1769,42 @@ anchor to them.
   (b_capture.gd:75), so its fight shots fail.
 - **May read poorly at small size (art will revisit):** SPILLWAY, PINCER, HIJACK (looks like ANCHOR), MIRROR PLATE,
   CALIBRATION, COLLECTOR, ROOTKIT, BURST, FEINT, KINETIC WALL.
+
+### A-161 · 2026-11-17 · Raid city stop marks + crew states (A-159 a/b) · READY
+- **Branch:** `art/raid-marks` 3b9dd3bfc (art clone), on d40dc3a86. None of build's raid files is touched; the work
+  hangs off `RaidLookSkin.dress()` / `mark_dirty()`.
+- **Stop marks:**
+  - TARGET: a red crosshair;
+  - THEN: a white dashed ring;
+  - END: a pink ring with a heart;
+  - FELL: a struck X plus a chip;
+  - HELD: a lime tick plus a chip;
+  - the HQ glows red when it's the fought stop;
+  - the route is white dots with an arrow per leg, greyed after a hold ("route called off");
+  - lost sites get a Solace-teal glow and "retake: tier easier".
+  The stamps use `poster_stamp` and MotionSkip.
+- **Crew states:**
+  - chips: HERE / HELPS / AT HQ / OFF / FELL BACK / DEFENDS;
+  - the falls-back arrow;
+  - +XP / LEVEL UP chips;
+  - "salvage kept".
+- **Seams (on `RaidLookSkin`, via `view.look_skin()`):**
+  - `stop_screen_pos(i) -> Vector2`: BRaidView-local px. For a stop off the board it returns its pin on the board
+    edge, and `Vector2.INF` when there is none;
+  - `crew_rect(id) -> Rect2`: empty when hidden;
+  - also `crew_states`, `stop_layer.stops` and `stop_layer.falls`.
+- **Tests:**
+  - `test_raid_marks` 16 and `test_raid_marks_flow` 6 (fast);
+  - focus set 109, 2 failing, both on the base: the `b_end_city_photo.gd:121` bare sort (as in A-160), and an orphan
+    count in `test_b_city_campaign_mouse` that only fails right after `test_b_campaign_mouse`;
+  - schema PASS, content PASS.
+- **Sheets:** `raid_marks/sheet_*.jpg`, plate vs game for moments a–f plus the combined sheet.
+- **Build asks:**
+  1. Frame the whole route, as the plates show all stops. Pass the stop lots as the camera's `extra` in
+     `BRaidView._place`.
+  2. Keep HELD, TARGET ACQUIRED and "route called off" clear of the stop marks, using the seams.
+  3. Add `rctx.fellBack` (crew ids) for an exact FELL BACK on results; the view already reads it.
+  4. Add an `xp` field in crewStats, so the chip reads "+n XP".
+  5. The roster is still the left text list with "not placed" lines; that's A-159 item 1 (SC2b).
+- **Note:** golden campaigns have no city map, so stops sit at the station lots and legs are straight lines. With a
+  city map they follow the real streets.
