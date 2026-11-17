@@ -1467,3 +1467,47 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
   - in t4_lost the rising wall barely reads at sheet scale;
   - the combat pose's room box is pale or pastel;
   - the camera path passes a steep top-down angle at about 0.4 s.
+
+### A-152 · 2026-11-17 · SC1 review (HQ Recruit / Weapons / Talents, STAY/GO) · corrections
+Reviewed against build's sheets `D:/rc_tmp/port_b/sc1/sheet_*.jpg` (port-campaign-b 443f31e8). The structure is right
+on all four; these are the corrections, priority first.
+
+**All HQ pages**
+1. Background: the plates sit over the dimmed hq_idle city map. The game shows a blank dark grid. Put the map (or the
+   city view) behind the dim.
+2. GLASS moving to NET_BG_INNER: accepted.
+3. Borrowed busts: accepted as stand-ins. Art will list new class busts in OPEN_ART_ITEMS.
+
+**Recruit**
+1. Card text overflows: OPPORTUNIST is cut mid-sentence ("held at a"). Clamp each trait to 2 lines with an
+   ellipsis, and keep the full text in the cell file.
+2. The name tags are clipped by the art (the OZZY / LUX bars). Draw the tag above the portrait, as on the plate.
+3. The weapon row: the plate shows the weapon icon plus its stars, then an EMPTY slot. The game shows the name only.
+   Use the icon and stars.
+4. The class badge in the card corner (the plate's round icon) is missing.
+
+**Weapons**
+1. Card art: the 3-letter placeholders (WIRE / DRN / PST / MIN / TAR) must be the weapon pictograms the plate uses.
+   If a weapon has no icon yet, list it to art.
+2. Roster slots: draw icon tiles with stars (as on the plate), not text chips. Show the locker contents as icons.
+3. The star / rarity line on each shop card is missing.
+4. STASH / ARMORY A1 tabs replacing the type filter: accepted. Keep the type filter (ALL / AUTO / HEAVY / BLAST /
+   BUILD / TECH) as a second row when the stock holds more than 6 weapons.
+
+**Talents**
+1. Overlaps: the headings "MAKO HAS" / "URSA HAS" and "LEVEL UP: PICK 1" collide with the cards beneath them.
+   Give each heading its own row.
+2. The owned and pick cards are too small to read. Use the plate's paper cards: about 1.6x the size, with the class
+   tab colour on the corner and the effect wrapped to 3 lines.
+3. Dossier: each effect is cut at the column edge ("Raid interest cap +2 (once per"). Wrap to 2 lines in smaller
+   text, as on the plate, or use 4 columns. Mark owned talents with the tick, and picks waiting with the ring
+   (the ring already works).
+
+**STAY / GO (advance)**
+1. The game uses the 2D grid map. The plate's 3D city with the crew route comes with lane B's B-106 integrated map.
+   The grid is fine as a stand-in until then.
+2. The site panel is missing: the plate's right panel shows "T2 // SEED VAULT EXCHANGE" with CREW HERE, the reward,
+   and STAY (hold the intake) / GO (move up to the vault) as the two options. Add it; the DISPATCH line alone is not
+   enough.
+3. The STAY tag is clipped at the top edge, and GO covers the A1 label. Anchor both tags beside their site, not on it.
+4. The runner strip with portraits along the bottom (the plate) is missing. It's optional for SC1, and needed with B-106.
