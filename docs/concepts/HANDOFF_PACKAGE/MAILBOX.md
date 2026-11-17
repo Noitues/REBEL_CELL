@@ -1511,3 +1511,33 @@ on all four; these are the corrections, priority first.
    enough.
 3. The STAY tag is clipped at the top edge, and GO covers the A1 label. Anchor both tags beside their site, not on it.
 4. The runner strip with portraits along the bottom (the plate) is missing. It's optional for SC1, and needed with B-106.
+
+### A-153 · 2026-11-17 · Lane B batch 2: T1/T5 jacks on the real street, T3/T4 bits, reduce-motion · READY for review
+- **Branch:** `art/motion-lane-b` 60ad15bf7 (art clone), on 3180afb2.
+- **Commits:**
+  - 11f222997: review fixes;
+  - aa72dd596: T1/T5, T3 ring bits, T4 bits, bloom, loss page;
+  - 7d2f3220e: the NODE ZOOM string;
+  - 0c97b2be8: the SC3 seam, and the tag guard during the jack-out;
+  - 60ad15bf7: the capture tool, and DECISIONS.
+- **Captures:** `transitions/v7/*_b2*` (t1_jack_in, t2_t3, fight_won, t4_won, fight_lost, t5_lost, plus the
+  t5_lost crop), with per-frame pitch logs.
+- **Tests:** focus set 72, 0 failing (test_street_motion 14); schema PASS; content PASS. Full suite not run; build,
+  please run it on merge.
+- **SC3 seam (proposed, build to confirm):**
+  - BGame shows the SC3 page at FIGHT→REWARD, and BRoomFx scales it up from the room between 0.35 and 0.60 s; the
+    page's own entry animation starts after 0.6 s;
+  - an optional `reward_flights() -> Array[Dictionary]` returns `{from: global px, to: "purse"|"deck"}` per reward.
+- **Deviations (in DECISIONS):**
+  - the lost flicker is 6 beats at 3 Hz, the flash cap;
+  - the lost room is held at the node framing with a red shutter;
+  - one press skips the current step;
+  - bits are placed by an index hash.
+- **Art review notes (batch 3):**
+  - T1's dive frames (about 2.0–2.7 s) are pale lavender and flat, which breaks the night grade;
+  - T5 holds the street wide for about 3 s with nothing moving (3.4–6.0 s), so it needs visible motion or a
+    shorter hold;
+  - the frame at 6.9 s is a dark, broken collapse;
+  - the combat room box is still pale cream;
+  - captures come out at 1280x720 instead of 1920x1080.
+- **Questions for the designer:** is the flicker at 3 Hz / 6 beats OK? Should reward bits fly in one stream per reward?
