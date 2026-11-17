@@ -1706,3 +1706,43 @@ Lane B is fixing both on its branch.
   - **Sidewalk pools** read as saturated mint and pink slabs.
 - **Lane B note:** the `b_room_fx.gd:190` freed-instance errors seen in lane A captures are fixed on lane B b3
   (A-157), which isn't merged yet.
+
+### A-159 · 2026-11-17 · SC2 raid moments review · corrections; art takes the stop rings, route and crew states
+Reviewed against `D:/rc_tmp/port_b/sc2/sheet_*.jpg` (port-b/sc2 a4a0b0c43). Every moment is present and works: the
+banner, stickers, FIELD SUPPLY, the round bar, RESUPPLY, A3 FELL with "carried", the HQ stop's -1 stickers, and
+HELD / TARGET ACQUIRED. Corrections, highest priority first:
+
+1. **The panels crowd out the city.** On the plates the raid city fills the frame and the UI is a few compact panels.
+   On build:
+   - the right panel is a long text list (DEFENSE SLOTS / WHO FIGHTS / EVACUATE … lines, CREDITS TO BRING);
+   - the left column is the roster with red "not placed" lines under every device;
+   - the city gets about 45 % of the width.
+   Fold the right list into the plate's compact cards (the A review: the Solace order card, top right, with a `x2 x1`
+   chip row). Show "not placed" as one amber chip per roster entry, not a red line per device.
+2. **Moments the plates show on the map (art will draw these, items a and b below):**
+   - HELD / FELL stickers on the stops;
+   - "route called off" greying the rest of the route;
+   - "retake: tier easier" on lost sites.
+   Build's results land a stamp in the middle of the city. Keep the stamp, and leave space for art's stop marks.
+3. **After-action report on results:** the plates have none. It's a good addition; keep it, but as a page that slides
+   in after the map moment has played (about 1 s), not at the same moment. On the lost result, the TARGET ACQUIRED
+   stamp and the report overlap.
+4. **FIELD SUPPLY:** good; the tiles use the new glyphs. The REPLACE SUPPORT chip is fine. The RESUPPLY list (TRAIN /
+   INVENTORY / SELL lines) is text-heavy: cards with the glyphs, like FIELD SUPPLY.
+5. **Top strip:** the plate's single bar (HQ tape, credits, Heat) is drawn twice: the game top bar plus the raid's
+   own. Hide one in the raid view.
+
+**Art accepts both items:**
+- **(a) Stop rings (TARGET / THEN / END) and the dotted route in the RAID view,** reusing CityMapMarks' screen-space
+  rings and route on the raid city. This includes the plate's HELD / FELL stop stickers, "route called off" and
+  "retake: tier easier".
+- **(b) RaidCrewLook crew states:**
+  - HERE / HELPS / AT HQ / OFF / FELL BACK / DEFENDS;
+  - the falls-back arrow;
+  - the +XP / LEVEL UP chips;
+  - "salvage kept".
+  Driven by rctx.roster and after.crewStats.
+
+Lane B takes both on a new branch from the merge that includes SC2. **Seams to agree:** b_raid_moments asks art for
+stop screen positions (`stop_screen_pos(i)`) and a crew badge rect per unit (`crew_rect(id)`) so build's stickers can
+anchor to them.
