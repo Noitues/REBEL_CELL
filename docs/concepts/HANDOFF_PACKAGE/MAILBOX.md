@@ -1672,3 +1672,37 @@ Lane B is fixing both on its branch.
 - **Tests:** focus set 113, 0 failing (10 scripts incl. test_anim_r6_rules and test_sc3_reward_screens); schema PASS;
   content PASS. Full suite not run.
 - **For lane A:** the dark ground beyond the street's LOD band at the end of T5.
+
+### A-158 · 2026-11-17 · Netrun plate pass 4 · READY (look gaps remain; one designer question)
+- **Branch:** `art/netrun-plate-pass2` head 8a759aa4d (art clone): pass 3 rebased (dc305fa16) plus 4 commits, on
+  85166f5f6.
+- **Changes:**
+  - **T5 band release:** `BStreetView.release_city` runs when the jack-out lands. The city beyond the band and the
+    outer ground draw again. There is no test for it yet.
+  - **Capture tool:** waits for lane B's jack-in after SC3.
+  - **Lit-interior kit for rooms:** back-wall gradient, dark sides and ceiling, lit floor, furniture, frame, sheen.
+  - **Gallery bays and the glass block** are lit boxes with depth.
+  - **Shopfronts:** gradient windows, mullions, a sheen.
+  - **Park frontage:** hedge and rail, lit paths, lamps, kiosks, plaza and subway entrances. No shop pavilions on parks.
+  - **Sloped streets:** the run's own street is cut with the section, and a flat deck sits at the curb grade.
+  - **Seed 7:** the spill is pulled back.
+  - **BLOCK SERVER bio-lab kit** (street-only kind `bio_lab`).
+- **Tests:** focus set 104, 0 failing; schema PASS; content PASS. Full suite not run.
+- **Sheets:**
+  - `netrun_plate_fixture/game_vs_plate_04.jpg` (seeds 7, 11, 3, 4, 5 park);
+  - `crops_04.jpg` (1:1 plate crops vs game).
+- **Values, landing (median / under 0.10; plate 0.170 / 32 %):**
+  - seed 7: 0.158 / 30 %;
+  - seed 11: 0.149 / 36 %;
+  - seed 3: 0.141 / 34 %;
+  - seed 4: 0.148 / 39 %;
+  - seed 5 (park): 0.099 / 50 %.
+- **What the 1:1 crops show (art's verdict):**
+  - **The post smears the picture.** Chromatic aberration, grain and horizontal ghosting soften everything, and the
+    plate is crisp. This is the largest single gap now.
+  - **Lane A captures are 1280x720** (lane B fixed the same bug in its tool).
+  - **Most frontage rooms show a shut wall at landing** (AHEAD state), so the new interiors barely show. The plate
+    lights every room. This is a designer question.
+  - **Sidewalk pools** read as saturated mint and pink slabs.
+- **Lane B note:** the `b_room_fx.gd:190` freed-instance errors seen in lane A captures are fixed on lane B b3
+  (A-157), which isn't merged yet.
