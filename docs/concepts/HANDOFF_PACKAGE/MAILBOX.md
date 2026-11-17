@@ -1843,3 +1843,23 @@ anchor to them.
   - all rooms lit at landing?
   - per-street exposure?
   - is the structural difference acceptable, or should a netrun street get a dedicated low-rise "plate block" kit?
+
+### A-163 · 2026-11-17 · Critic loop: calibration, round 0, alternatives, designer picks · LOG
+Designer requests via build (2026-11-17): art self-corrects through fresh critic agents; every critic sees the
+reference images; the scale is calibrated; stalled screens try alternative looks instead of polishing (no local maxima).
+- **Calibration (blind, same rubric):** quality bar setup 8, shop 9, talents 8 -> **target 8.5**. Our plates 4-7;
+  8 only for the trace printout, the d1 end plates and t4_w8. Table: D:/rc_tmp/critic/calib_final.md.
+- **Round 0, anchored (score / 8.5):** city 3.5-4, netrun street 4.6, raid 3.8-4.5, fight 4.5, rewards 5.3-6,
+  MAINFRAME 1.5 (pre-SC4b), HQ 2-5.7, end 5.5-6. Both ways: D:/rc_tmp/critic/r0_both_ways.md.
+- **Alternatives** (concept frames, D:/rc_tmp/critic/alts/<screen>/, judged blind against the current capture):
+  - City: C "Beacon city" 8.0, A "Case file" 7.5, B "War table" 7.0, current 3.0. C2 (grafts) 7.6 vs C 7.0 on a second
+    judge (judges vary +-0.5-1). **Designer pick: C.** Build lays out the HUD to C2 (SC4d); C3 in progress.
+  - Elite reward: A "Haul Mat" 8.5, B "Loss Notice" 8.0, C "Holo Fan" 7.5, current 5.5.
+    **Designer pick: C "Holo Fan"** (his eye over the critic's top score). C2 + router / terminal / rack variants in
+    progress; A kept on file.
+  - Fight, raid, netrun street (may answer item 14), HQ hub: alternatives in progress.
+- **MAINFRAME shop:** build's SC4b layout (9a26bd978) gets art's finish from the Campaign A kit still on the branch
+  (MainframeFacade, MainframeSign v4, ShopPegboard, MainframeArt, ShopItem, holo LEAVE). Map:
+  D:/rc_tmp/critic/final/mainframe_reuse.md.
+- **Bugs checked:** end_05 won memo on a loss and netrun_11 street name = capture staging (harness fixes); worm order =
+  HUD wording (build fixed, SC4a abba18a48); raid bottom heart = CORE pool (designer question).
