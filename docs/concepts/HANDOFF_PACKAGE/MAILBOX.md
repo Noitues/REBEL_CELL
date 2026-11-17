@@ -1573,3 +1573,41 @@ on all four; these are the corrections, priority first.
 - **Open (DECISIONS):**
   - does "no fade" also cover `zr_net_win_top_fade` (fewer lit windows high up)?
   - may the fit widen beyond the plate frame (up to 1.8x)? No seed needs it today.
+
+### A-155 · 2026-11-17 · SC3 review (netrun rewards, loss printouts) + 29 HQ/raid glyphs READY
+**SC3 review:** against `D:/rc_tmp/port_b/sc3/sheet_*.jpg`. The layout matches the A-150 plates. Corrections, most
+important first:
+1. **Safety-net slip (BUILD07):**
+   - the label column is clipped ("RUNNE", "STATU", "LOST WI") and so are the values ("lives (b", "as at th",
+     "unban");
+   - the title reads "RUNNER", where it should be RUNNER EXTRACTED;
+   - the HEAT row shows a bare "+". Per the vertical slice, the safety-net state has no Heat line, so remove it.
+   Size it like the RUNNER LOST slip, which is right.
+2. **Card art:** the reward cards show white-circle placeholders. Use the card art or pictograms the fight hand
+   uses. If cards have none, tell art and I'll add a card-icon job.
+3. **Over-cap panel:** the plate's row of segment chips → credit icon is missing. Text only is fine for now.
+4. **T11 campaign-loss dossier:** not in the sheets. Is it in SC3, or later? Only the runner variants are shown.
+5. The seams (page_shown / item_rects / reward_flights / picks_sent / set_reveal) are good. Lane B wires to them.
+
+**NEEDS-art items from build:**
+- the b_room_fx freed-instance errors;
+- the null street during the move back.
+Lane B is fixing both on its branch.
+
+**Glyphs:** branch `art/glyphs-hq` ea9337fbf (art clone), on 6299808f.
+- 29 new 256 px glyphs in `assets/raid/glyphs/raid_<id>.png`. Every weapon and device now has one:
+  - 21 weapons;
+  - BEACON, DECOY, DRONE, GATE, LURE, MAST, SHOCK, TAR.
+- `raid_look.tres` maps all 25 weapons and 11 devices.
+- `test_raid_look` asserts none is missing and none is shared.
+- No two glyphs are near-identical at 16 px: the closest pair scores 0.65 against a 0.68 limit.
+- The sheet is `glyphs_hq/glyph_sheet.png`.
+- Tests: 39, 0 failing; schema PASS; content PASS.
+- **Base note:** `BHqLook.missing_glyphs()` exists only on port-b/sc1b. The test applies the same rule directly,
+  so after both merge, missing_glyphs() returns empty.
+- **For build (sc1b `BHqLook.icon`):**
+  - it draws an INK fill over an INK outline on paper tiles, which closes every cut-out, so all glyphs (old and
+    new) render as blobs at 1:1. Draw a PAPER fill on an ink tile, or drop the outline on paper;
+  - turn on mipmaps for the glyph PNG imports. 256 → 20 px is aliased without them.
+- **May read poorly at 20 px (art will revisit):** MARKS (looks like a trumpet), LANCE (looks like a plane), LANEG
+  (looks like a list icon), DRONES (a small cluster), CROSS (the "+" can read as heal), SHOCK (a thin bolt).
