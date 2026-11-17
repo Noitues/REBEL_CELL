@@ -1863,3 +1863,23 @@ reference images; the scale is calibrated; stalled screens try alternative looks
   D:/rc_tmp/critic/final/mainframe_reuse.md.
 - **Bugs checked:** end_05 won memo on a loss and netrun_11 street name = capture staging (harness fixes); worm order =
   HUD wording (build fixed, SC4a abba18a48); raid bottom heart = CORE pool (designer question).
+
+### A-164 · 2026-11-17 · Designer rulings: city C3 approved, raid in the real city (B2), no forecasts · LOG
+Relayed by build (2026-11-17):
+1. **City:** C3 "Beacon city" approved for implementation. Build's SC4d lays out the HUD to C3 (+ judge point 3: the
+   site stats in the hover card, dock = crew pick + launch). Art takes the camera crop / local light on the site
+   clusters and the locked / open / claimed / tier markers in Godot on top of SC4d. Concept trajectory C 8.0/7.0 -> C2
+   7.6/7.3 -> C3 7.8 (concept iteration stopped, gains < 0.5).
+2. **Raid:** designer: "I really have my heart set on it taking place in the real city. Mapping it to the streetview
+   makes no sense. Option B is the only viable alternative..." A Street level (8.0) and C Scope (7.5) are out despite
+   their scores. Next: **B2** = top-down over the real city, faded / dimmed, with a blueprint / schematic wireframe of
+   route, stops, slots, lanes and sites on the actual street grid, B's intercepted-plan approach on top (raid order,
+   slots, held weapon, FIELD SUPPLY, crew). Judged blind vs 8.5 alongside B and the current screen.
+3. If B2 stalls clearly below 8.5: a NEW round of 2-3 alternatives, all in the real city (no street view, no detached
+   boards), each driven by a named narrative idea (guerrilla crawl to corp HQ, claimed sites retaken by corp raids,
+   cells stationed at sites, the Solace theme).
+4. **Forecasts stay dev-only in player view:** no "+2" / "HELD with shotgun" outcome text unless the designer rules
+   otherwise.
+Also: elite reward pick C "Holo Fan" (A-163); C2 7.5 vs C 7.0, C3 in progress. "+1 GUARD to the raid defense deck"
+dropped from the frames (not a Campaign B rule; GDD 7.2 is v2 text).
+Trajectory: D:/rc_tmp/critic/trajectory.md (post-implementation stall -> back to alternatives, not polish).
