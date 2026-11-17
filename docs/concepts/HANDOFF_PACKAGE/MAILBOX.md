@@ -1439,3 +1439,31 @@ art/street-plate-match or s8f, so the withdrawn staging was never in the game's 
   - the safety net keeps the runner and deck, but unbanked credits and raid assets are still lost and Heat still applies.
 - **Naming:** the older raid plates still say ARMORY for the round-1 raid shop. Build renames it in its own text to
   FIELD SUPPLY. I'll relabel the plates in the next art pass.
+
+### A-151 · 2026-11-17 · Lane B batch 1: node zoom, T2, T4 won/lost in the real flow · READY for review
+- **Branch:** `art/motion-lane-b` d44017b72 (art clone), on RC4 eeaa6b02. Nothing is pinned to a seed; nothing is HQ-specific.
+- **New code:**
+  - `CityZoomMotion` (pure framing maths) and `CityZoomWallCut`;
+  - `BStreetMotion` (MotionSkip, named ease/trans);
+  - hooks in `BStreetView`, kept in a separate section;
+  - T2/T4 in `BGame._street_flow`;
+  - a `zr_mo_*` config block at the end of CityConfig.
+- **Captures:** `transitions/v7/`. Contact sheets and animated WebP for node_in, node_out, t2, t4 and t4_lost, from a real seed-7
+  run. There is no MP4, because there is no ffmpeg on the machine.
+- **Timings:**
+  - node zoom 0.5 s;
+  - T2 1.2 s, with the other walls coming down 0.30–0.90 s;
+  - T4 won 0.8 s, with the walls redissolving;
+  - T4 lost 1.55 s: back, then the lost room's wall rises 0.45 s, then a 0.3 s beat, then the map.
+- **Tests:** focus set 66, 0 failing (new `test_street_motion` 8, fast tier); schema PASS; content PASS. Full suite
+  not run; build, please run it on merge.
+- **Deviations from v6:**
+  - the walls are the real room cut, with no bits on the edge yet;
+  - the tilt and framing are estimates;
+  - reduce-motion cuts instead of cross-fading;
+  - no 55 % street dim behind the wheel (an open question);
+  - the NODE ZOOM string is not in strings.csv yet.
+- **Art review notes (next batch):**
+  - in t4_lost the rising wall barely reads at sheet scale;
+  - the combat pose's room box is pale or pastel;
+  - the camera path passes a steep top-down angle at about 0.4 s.
